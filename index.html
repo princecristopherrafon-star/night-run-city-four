@@ -1,0 +1,242 @@
+<script>
+const FILES = [
+  {name:"BOSENG", img:"boseng.jpg", speed:2.0, color:"#ff4444", desc:"Tough and consistent. Does not tire easily.", maxSpeed:2.2, fatigueRate:0.6},
+  {name:"MICHAEL", img:"Michael.jpg", speed:2.5, color:"#44ff44", desc:"Balanced. Good speed and stamina.", maxSpeed:2.7, fatigueRate:1.0},
+  {name:"SPEED", img:"speed.jpg", speed:3.0, color:"#4488ff", desc:"Quick start but tires faster than most.", maxSpeed:3.2, fatigueRate:1.5},
+  {name:"63", img:"63.jpg", speed:3.6, color:"#ffff00", desc:"Fastest runner but needs frequent rest.", maxSpeed:4.0, fatigueRate:2.5}
+];
+
+let loadedImgs = {};
+let canvas = document.getElementById('gameCanvas');
+let ctx = canvas.getContext('2d');
+canvas.width = innerWidth; canvas.height = innerHeight;
+
+let isPlaying = false, timeLeft = 90, stamina = 100, isSprinting = false;
+let cameraMode = '3rd';
+let yaw = 0, pitch = 0.35;
+let playerVelY = 0, onGround = true;
+let player = {x:0, y:0, z:1.7};
+let chasers = [], keys = {}, joyX = 0, joyY = 0;
+let walls = [], trees = [];
+let mainBuilding = {x:0, y:-420, w:260, h:260};
+let door = {x:-35, y:-300, w:70, h:25};
+let platforms = [
+  {x:0,y:-340,w:65,h:65,z:3.5},{x:55,y:-370,w:55,h:55,z:5.5},{x:-55,y:-400,w:55,h:55,z:7.5},
+  {x:0,y:-430,w:65,h:65,z:9.5},{x:0,y:-460,w:55,h:55,z:11.5}
+];
+
+const bgMusic = document.getElementById('bgMusic');
+const speedSound = document.getElementById('speedSound');
+const heheSound = document.getElementById('heheSound');
+const busingSound = document.getElementById('busingSound');
+
+function preloadImages(callback) {
+  let count = 0;
+  FILES.forEach(f => {
+    const img = new Image();
+    img.src = f.img;
+    img.onload = img.onerror = () => {
+      count++;
+      if (count >= FILES.length) {
+        buildWheel();
+        callback && callback();
+      }
+    };
+    loadedImgs[f.name] = img;
+  });
+}
+
+FILES.forEach((f, i) => {
+  const preview = document.getElementById('prev' + i);
+  preview.src = f.img;
+  document.getElementById('file' + i).addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const newImg = new Image();
+    newImg.onload = () => {
+      loadedImgs[f.name] = newImg;
+      preview.src = url;
+      buildWheel();
+      alert(f.name + " - Picture updated");
+    };
+    newImg.src = url;
+  });
+});
+
+function generateWorld() {
+  walls = []; trees = [];
+  for (let x = -800; x <= 800; x += 200) {
+    for (let y = -800; y <= 800; y += 200) {
+      if (Math.abs(x) < 150 && Math.abs(y) < 150) continue;
+      if (Math.abs(x) < 150 && Math.abs(y + 420) < 200) continue;
+      const shades = ['#6B7280','#4B5563','#374151','#1F2937'];
+      walls.push({
+        x:x, y:y, w:100+Math.random()*40, h:100+Math.random()*40,
+        height:60+Math.random()*120, color:shades[Math.floor(Math.random()*4)]
+      });
+    }
+  }
+  for (let i = 0; i < 80; i++) {
+    trees.push({x:(Math.random()-.5)*1600, y:(Math.random()-.5)*1600, height:5+Math.random()*5});
+  }
+}
+
+function project(x, y, z) {
+  let dx = x - player.x;
+  let dy = y - player.y;
+  let rx = dx * Math.cos(-yaw) - dy * Math.sin(-yaw);
+  let ry = dx * Math.sin(-yaw) + dy * Math.cos(-yaw);
+  let cz = 300 / Math.max(1, ry);
+  return {
+    x: canvas.width/2 + rx * cz,
+    y: canvas.height/2 - (z - player.z + pitch*60) * cz * 0.6,
+    depth: ry,
+    scale: cz/300
+  };
+}
+
+function collide(p, r = 16) {
+  for (let w of walls) {
+    if (p.x+r > w.x-w.w/2 && p.x-r < w.x+w.w/2 &&
+        p.y+r > w.y-w.h/2 && p.y-r < w.y+w.h/2) {
+      const dx = p.x - w.x, dy = p.y - w.y;
+      if (Math.abs(dx) > Math.abs(dy))
+        p.x = w.x + Math.sign(dx) * (w.w/2 + r);
+      else
+        p.y = w.y + Math.sign(dy) * (w.h/2 + r);
+    }
+  }
+  const mb = mainBuilding;
+  if (p.x+r > mb.x-mb.w/2 && p.x-r < mb.x+mb.w/2 &&
+      p.y+r > mb.y-mb.h/2 && p.y-r < mb.y+mb.h/2) {
+    const inDoor = p.x > door.x && p.x < door.x+door.w &&
+                   p.y > door.y-15 && p.y < door.y+35;
+    if (!inDoor) {
+      const dx = p.x - mb.x, dy = p.y - mb.y;
+      if (Math.abs(dx) > Math.abs(dy))
+        p.x = mb.x + Math.sign(dx) * (mb.w/2 + r);
+      else
+        p.y = mb.y + Math.sign(dy) * (mb.h/2 + r);
+      return 'wall';
+    }
+    return 'building';
+  }
+  for (let t of trees) {
+    const dx = p.x - t.x, dy = p.y - t.y, d = Math.hypot(dx, dy);
+    if (d < 28 && d > 0.1) {
+      p.x = t.x + dx/d * 28;
+      p.y = t.y + dy/d * 28;
+    }
+  }
+  p.x = Math.max(-900, Math.min(900, p.x));
+  p.y = Math.max(-900, Math.min(900, p.y));
+  return 'open';
+}
+
+function makeChaser(f, idx) {
+  const spawns = [[0,800],[800,0],[-800,0],[0,-800],[600,600],[-600,600]];
+  const sp = spawns[idx % spawns.length];
+  return {data:f, x:sp[0], y:sp[1], z:1.7, speed:0, tired:0, stamina:100};
+}
+
+function playSound(audio) {
+  if (!audio) return;
+  audio.currentTime = 0;
+  audio.volume = 0.4;
+  audio.play().catch(() => {});
+}
+
+function startMusic() {
+  bgMusic.volume = 0.25;
+  bgMusic.play().catch(() => {});
+}
+
+function toggleCamera() {
+  cameraMode = cameraMode === '3rd' ? '2nd' : '3rd';
+  document.getElementById('cameraMode').textContent =
+    cameraMode === '3rd' ? 'CAMERA: 3RD PERSON' : 'CAMERA: 1ST PERSON';
+}
+
+function buildWheel() {
+  const wheel = document.getElementById('wheel');
+  wheel.innerHTML = '';
+  const positions = [
+    {top:'8px',left:'50%',transform:'translateX(-50%)'},
+    {top:'50%',right:'8px',transform:'translateY(-50%)'},
+    {bottom:'8px',left:'50%',transform:'translateX(-50%)'},
+    {top:'50%',left:'8px',transform:'translateY(-50%)'}
+  ];
+  FILES.forEach((f, i) => {
+    const img = document.createElement('img');
+    img.src = loadedImgs[f.name]?.src || f.img;
+    Object.assign(img.style, positions[i]);
+    img.style.borderColor = f.color;
+    wheel.appendChild(img);
+  });
+}
+
+function drawSky() {
+  const grad = ctx.createLinearGradient(0,0,0,canvas.height);
+  grad.addColorStop(0,'#0a0a2a');
+  grad.addColorStop(0.4,'#1a2a4a');
+  grad.addColorStop(0.7,'#2a4a6a');
+  grad.addColorStop(1,'#4a6a8a');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+}
+
+function drawGround() {
+  ctx.fillStyle = '#3a4a3a';
+  ctx.fillRect(0, canvas.height*0.52, canvas.width, canvas.height*0.5);
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  for (let i = -800; i <= 800; i += 100) {
+    const p1 = project(i, -800, 0);
+    const p2 = project(i, 800, 0);
+    if (p1.depth > 0 && p2.depth > 0) {
+      ctx.beginPath();
+      ctx.moveTo(p1.x, Math.max(0, p1.y));
+      ctx.lineTo(p2.x, Math.max(0, p2.y));
+      ctx.stroke();
+    }
+    const p3 = project(-800, i, 0);
+    const p4 = project(800, i, 0);
+    if (p3.depth > 0 && p4.depth > 0) {
+      ctx.beginPath();
+      ctx.moveTo(p3.x, Math.max(0, p3.y));
+      ctx.lineTo(p4.x, Math.max(0, p4.y));
+      ctx.stroke();
+    }
+  }
+}
+
+function drawBuilding(w) {
+  const base = project(w.x, w.y, 0);
+  if (base.depth <= 0) return;
+  const top = project(w.x, w.y, w.height);
+  const w2 = w.w/2 * base.scale;
+  const h = base.y - top.y;
+  ctx.fillStyle = w.color;
+  ctx.fillRect(base.x - w2, base.y - h, w2*2, h);
+  ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(base.x - w2, base.y - h, w2*2, h);
+}
+
+function drawMainBuilding() {
+  const mb = mainBuilding;
+  const base = project(mb.x, mb.y, 0);
+  if (base.depth <= 0) return;
+  const top = project(mb.x, mb.y, 35);
+  const w2 = mb.w/2 * base.scale;
+  const h = base.y - top.y;
+  ctx.fillStyle = '#1a2a4a';
+  ctx.fillRect(base.x - w2, base.y - h, w2*2, h);
+  ctx.strokeStyle = '#00ccff';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(base.x - w2, base.y - h, w2*2, h);
+  const dp = project(door.x+door.w/2, door.y, 0);
+  if (dp.depth > 0) {
+    ctx.fillStyle = '#00ff88';
+    ctx.fillRect(dp.x - 15*dp.scale, dp.y - 40*dp.scale, 3
