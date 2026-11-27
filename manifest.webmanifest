@@ -1,0 +1,11 @@
+{
+  "name": "NIGHT RUN: CITY OF FOUR",
+  "short_name": "NIGHT RUN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#05090e",
+  "theme_color": "#080d13",
+  "description": "First-person mobile horror chase game."
+}
