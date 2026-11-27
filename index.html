@@ -1,708 +1,1107 @@
-// ========================================
-// FULL-SCREEN JUMPSCARE
-// ========================================
 
-function showJumpScare(chaser){
- if(gameEnded||scareLocked)return;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#080018">
+<title>NIGHT RUN - CITY FOUR</title>
 
- gameEnded=true;
- scareLocked=true;
- isPlaying=false;
- scareCount++;
-
- const overlay=document.getElementById("jumpScare");
- const image=document.getElementById("scareImage");
- const text=document.getElementById("scareText");
- const sub=document.getElementById("scareSub");
- const buttons=document.getElementById("scareButtons");
-
- const hunter=chaser.data;
- const hunterImage=loadedImgs[hunter.name];
-
- // The actual hunter that caught the player
- image.src=hunterImage?.src||hunter.img;
- image.style.objectFit="cover";
-
- text.textContent=""+hunter.name+" GOT YOU!";
- sub.textContent="YOU WERE CAUGHT BY";
-
- overlay.style.display="flex";
- overlay.classList.remove("shaking");
- void overlay.offsetWidth;
- overlay.classList.add("shaking");
-
- buttons.style.display="flex";
- scareSound();
-
- if(navigator.vibrate){
-  navigator.vibrate([250,100,250,100,500]);
- }
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #080018;
+  font-family: Arial, sans-serif;
+  color: white;
+  touch-action: none;
+  user-select: none;
+}
+
+#gameCanvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+#hud {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.hudBox {
+  background: rgba(0,0,0,.72);
+  border: 1px solid #00ccff;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-weight: bold;
+  font-size: 12px;
+  box-shadow: 0 0 15px #00ccff77;
+  backdrop-filter: blur(8px);
+}
+
+#staminaBar {
+  width: 125px;
+  height: 10px;
+  background: #333;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 5px;
+}
+
+#staminaFill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg,#00ff88,#ffff00);
+  transition: width .12s;
+}
+
+#speedInfo {
+  margin-top: 5px;
+  font-size: 11px;
+}
+
+#joystick {
+  position: fixed;
+  left: 20px;
+  bottom: 22px;
+  width: 130px;
+  height: 130px;
+  background: rgba(255,255,255,.12);
+  border: 2px solid rgba(255,255,255,.55);
+  border-radius: 50%;
+  z-index: 20;
+  box-shadow: 0 0 22px rgba(0,204,255,.55);
+  touch-action: none;
+  backdrop-filter: blur(5px);
+}
+
+#joyKnob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 56px;
+  height: 56px;
+  background: radial-gradient(circle at 30% 25%,#fff,#b5c7dc 70%,#526b80);
+  border-radius: 50%;
+  transform: translate(-50%,-50%);
+  box-shadow: 0 0 18px #fff;
+}
+
+#btns {
+  position: fixed;
+  right: 20px;
+  bottom: 22px;
+  display: flex;
+  gap: 12px;
+  z-index: 20;
+}
+
+.btn {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 2px solid white;
+  font-weight: 900;
+  font-size: 12px;
+  color: white;
+  touch-action: none;
+}
+
+#jumpBtn {
+  background: #ff8800;
+  box-shadow: 0 0 18px #ff8800;
+}
+
+#sprintBtn {
+  background: #ff0044;
+  box-shadow: 0 0 18px #ff0044;
+}
+
+#cameraBtn {
+  position: fixed;
+  right: 15px;
+  top: 100px;
+  z-index: 20;
+  padding: 9px 12px;
+  border: 1px solid #00ccff;
+  border-radius: 9px;
+  color: white;
+  background: rgba(0,10,30,.85);
+  font-weight: bold;
+}
+
+#menu {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center,#190044,#050014 80%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  padding: 15px;
+  overflow-y: auto;
+}
+
+#menu h1 {
+  font-size: clamp(34px,8vw,48px);
+  letter-spacing: 3px;
+  color: #00ccff;
+  text-shadow: 0 0 25px #00ccff;
+}
+
+#startBtn {
+  padding: 15px 42px;
+  font-size: 19px;
+  font-weight: 900;
+  background: #00ff88;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 0 20px #00ff88;
+  color: #001b13;
+}
+
+#wheel {
+  position: relative;
+  width: 155px;
+  height: 155px;
+  border: 3px solid #00ccff;
+  border-radius: 50%;
+  margin: 5px auto;
+  box-shadow: 0 0 20px #00ccff66;
+}
+
+#wheel img {
+  position: absolute;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 3px solid white;
+  object-fit: cover;
+  background: #111;
+}
+
+#previews {
+  display: flex;
+  gap: 8px;
+}
+
+#previews img {
+  width: 53px;
+  height: 53px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #00ccff;
+  background: #111;
+}
+
+#jumpScare {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+  overflow: hidden;
+}
+
+#scareImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: contrast(1.4) brightness(1.15) saturate(1.5);
+}
+
+#scareText {
+  position: absolute;
+  bottom: 12%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: clamp(30px,8vw,75px);
+  font-weight: 1000;
+  color: #ff001e;
+  text-shadow: 0 0 12px red,0 0 35px red;
+  pointer-events: none;
+}
+
+#scareSub {
+  position: absolute;
+  top: 8%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 15px;
+  letter-spacing: 5px;
+  color: white;
+  text-shadow: 0 0 12px red;
+}
+
+#scareRestart {
+  position: absolute;
+  bottom: 3%;
+  padding: 13px 28px;
+  border: none;
+  border-radius: 10px;
+  background: #ff1744;
+  color: white;
+  font-weight: bold;
+  font-size: 15px;
+  display: none;
+}
+
+#dangerVignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  background: radial-gradient(transparent 40%,rgba(255,0,30,.55));
+  transition: opacity .15s;
+}
+
+@keyframes shake {
+  0% { transform: translate(0,0) scale(1.03); }
+  15% { transform: translate(-15px,12px) scale(1.03); }
+  30% { transform: translate(15px,-12px) scale(1.03); }
+  45% { transform: translate(-12px,-12px) scale(1.03); }
+  60% { transform: translate(12px,12px) scale(1.03); }
+  75% { transform: translate(-8px,5px) scale(1.03); }
+  100% { transform: translate(0,0) scale(1); }
+}
+
+.shaking {
+  animation: shake .4s;
+}
+
+@media (orientation:landscape) {
+  #joystick {
+    width: 112px;
+    height: 112px;
+    left: 18px;
+    bottom: 14px;
+  }
+
+  #joyKnob {
+    width: 49px;
+    height: 49px;
+  }
+
+  #btns {
+    right: 18px;
+    bottom: 14px;
+  }
+
+  .btn {
+    width: 68px;
+    height: 68px;
+  }
+
+  #hud {
+    top: 7px;
+  }
+
+  #cameraBtn {
+    top: 82px;
+  }
+
+  #wheel {
+    width: 120px;
+    height: 120px;
+  }
+
+  #wheel img {
+    width: 43px;
+    height: 43px;
+  }
+
+  #menu {
+    gap: 5px;
+  }
+
+  #previews img {
+    width: 42px;
+    height: 42px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="gameCanvas"></canvas>
+<div id="dangerVignette"></div>
+
+<div id="hud">
+  <div class="hudBox">
+    THREAT: <span id="threat">--</span>m<br>
+    CITY SECTOR 01<br>
+    TIME: <span id="timer">90</span>s<br>
+    <span id="cameraMode">CAMERA: 3RD PERSON</span>
+  </div>
+
+  <div class="hudBox">
+    STAMINA
+    <div id="staminaBar">
+      <div id="staminaFill"></div>
+    </div>
+    <div id="speedInfo">SPEED: 0</div>
+  </div>
+</div>
+
+<button id="cameraBtn">CAMERA</button>
+
+<div id="joystick">
+  <div id="joyKnob"></div>
+</div>
+
+<div id="btns">
+  <button class="btn" id="jumpBtn">JUMP</button>
+  <button class="btn" id="sprintBtn">SPRINT</button>
+</div>
+
+<div id="jumpScare">
+  <img id="scareImage" src="63.jpg" alt="Hunter">
+  <div id="scareSub">YOU HAVE BEEN CAUGHT BY</div>
+  <div id="scareText">BOOOOO!</div>
+  <button id="scareRestart">TRY AGAIN</button>
+</div>
+
+<div id="menu">
+  <h1>NIGHT RUN</h1>
+  <p>CITY FOUR - VIBRANT HARDCORE</p>
+  <p style="color:#ffcc00;font-size:12px">
+    ⚠ FAST HUNTERS • FULL SCREEN JUMPSCARE
+  </p>
+
+  <div id="wheel"></div>
+
+  <div style="display:flex;gap:8px">
+    <input type="file" id="file0" accept="image/*" hidden>
+    <input type="file" id="file1" accept="image/*" hidden>
+    <input type="file" id="file2" accept="image/*" hidden>
+    <input type="file" id="file3" accept="image/*" hidden>
+
+    <img id="prev0" alt="BOSENG">
+    <img id="prev1" alt="MICHAEL">
+    <img id="prev2" alt="SPEED">
+    <img id="prev3" alt="63">
+  </div>
+
+  <button id="startBtn">▶ START RUN</button>
+
+  <p style="font-size:11px;opacity:.7;line-height:1.6">
+    Joystick = Move • JUMP = Jump • SPRINT = Hold<br>
+    Reach the blue building and survive!
+  </p>
+</div>
+
+<audio id="bgMusic" loop></audio>
+<audio id="speedSound"></audio>
+<audio id="heheSound"></audio>
+<audio id="busingSound"></audio>
+
+<script>
+"use strict";
+
+// ========================================
+// NIGHT RUN - CITY FOUR
+// ORIGINAL GAME ENGINE + IMPROVEMENTS
+// ========================================
+
+const FILES = [
+  {
+    name:"BOSENG",
+    img:"boseng.jpg",
+    speed:2.0,
+    color:"#ff4444",
+    desc:"Tough and consistent. Does not tire easily.",
+    maxSpeed:2.2,
+    fatigueRate:0.6
+  },
+  {
+    name:"MICHAEL",
+    img:"Michael.jpg",
+    speed:2.5,
+    color:"#44ff44",
+    desc:"Balanced. Good speed and stamina.",
+    maxSpeed:2.7,
+    fatigueRate:1.0
+  },
+  {
+    name:"SPEED",
+    img:"speed.jpg",
+    speed:3.0,
+    color:"#4488ff",
+    desc:"Quick start but tires faster than most.",
+    maxSpeed:3.2,
+    fatigueRate:1.5
+  },
+  {
+    name:"63",
+    img:"63.jpg",
+    speed:3.6,
+    color:"#ffff00",
+    desc:"Fastest runner but needs frequent rest.",
+    maxSpeed:4.0,
+    fatigueRate:2.5
+  }
+];
+
+// Original speed multiplier
+FILES.forEach(f => {
+  f.speed *= 1.9;
+  f.maxSpeed *= 1.9;
+});
+
+// ========================================
+// GAME VARIABLES
+// ========================================
+
+let loadedImgs = {};
+
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+let W = innerWidth;
+let H = innerHeight;
+
+let isPlaying = false;
+let gameEnded = false;
+
+let timeLeft = 90;
+let stamina = 100;
+let isSprinting = false;
+
+let cameraMode = "3rd";
+
+let yaw = 0;
+let pitch = 0.35;
+
+let playerVelY = 0;
+let onGround = true;
+
+let player = {
+  x:0,
+  y:0,
+  z:1.7
+};
+
+let chasers = [];
+let keys = {};
+
+let joyX = 0;
+let joyY = 0;
+
+let walls = [];
+let trees = [];
+
+let mainBuilding = {
+  x:0,
+  y:-420,
+  w:260,
+  h:260
+};
+
+let door = {
+  x:-35,
+  y:-300,
+  w:70,
+  h:25
+};
+
+let platforms = [
+  {x:0,y:-340,w:65,h:65,z:3.5},
+  {x:55,y:-370,w:55,h:55,z:5.5},
+  {x:-55,y:-400,w:55,h:55,z:7.5},
+  {x:0,y:-430,w:65,h:65,z:9.5},
+  {x:0,y:-460,w:55,h:55,z:11.5}
+];
+
+const bgMusic = document.getElementById("bgMusic");
+const speedSound = document.getElementById("speedSound");
+const heheSound = document.getElementById("heheSound");
+const busingSound = document.getElementById("busingSound");
+
+let lastTime = 0;
+let elapsed = 0;
+let timerAccumulator = 0;
+
+let scareCount = 0;
+let audioContext = null;
+
+// ========================================
+// CANVAS RESIZE
+// ========================================
+
+function resizeCanvas() {
+  W = innerWidth;
+  H = innerHeight;
+
+  canvas.width = W;
+  canvas.height = H;
+}
+
+resizeCanvas();
+
+addEventListener("resize", resizeCanvas);
+
+addEventListener("orientationchange", () => {
+  setTimeout(resizeCanvas, 250);
+});
+
+// ========================================
+// IMAGE LOADING
+// ========================================
+
+function preloadImages(callback) {
+  let count = 0;
+
+  FILES.forEach(f => {
+    const img = new Image();
+
+    img.onload = finish;
+    img.onerror = finish;
+
+    function finish() {
+      count++;
+
+      if (count >= FILES.length) {
+        buildWheel();
+
+        if (callback) callback();
+      }
+    }
+
+    img.src = f.img;
+    loadedImgs[f.name] = img;
+  });
+}
+
+// Custom character pictures
+FILES.forEach((f,i) => {
+  const preview = document.getElementById("prev"+i);
+  const input = document.getElementById("file"+i);
+
+  preview.src = f.img;
+
+  input.addEventListener("change", e => {
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    const url = URL.createObjectURL(file);
+    const newImg = new Image();
+
+    newImg.onload = () => {
+      loadedImgs[f.name] = newImg;
+      preview.src = url;
+      buildWheel();
+    };
+
+    newImg.src = url;
+  });
+});
+
+// ========================================
+// CHARACTER WHEEL
+// ========================================
+
+function buildWheel() {
+  const wheel = document.getElementById("wheel");
+
+  wheel.innerHTML = "";
+
+  const positions = [
+    {
+      top:"5px",
+      left:"50%",
+      transform:"translateX(-50%)"
+    },
+    {
+      top:"50%",
+      right:"5px",
+      transform:"translateY(-50%)"
+    },
+    {
+      bottom:"5px",
+      left:"50%",
+      transform:"translateX(-50%)"
+    },
+    {
+      top:"50%",
+      left:"5px",
+      transform:"translateY(-50%)"
+    }
+  ];
+
+  FILES.forEach((f,i) => {
+    const img = document.createElement("img");
+
+    img.src = loadedImgs[f.name]?.src || f.img;
+
+    Object.assign(img.style,positions[i]);
+
+    img.style.borderColor = f.color;
+
+    wheel.appendChild(img);
+  });
+}
+
+// ========================================
+// WORLD GENERATION
+// ========================================
+
+function generateWorld() {
+  walls = [];
+  trees = [];
+
+  const shades = [
+    "#FF2D55",
+    "#00E5FF",
+    "#FFD60A",
+    "#7D4DFF",
+    "#00FF88",
+    "#FF6B00"
+  ];
+
+  for (let x=-800;x<=800;x+=200) {
+    for (let y=-800;y<=800;y+=200) {
+
+      if (Math.abs(x)<150 && Math.abs(y)<150) continue;
+
+      if (Math.abs(x)<150 && Math.abs(y+420)<200) continue;
+
+      walls.push({
+        x:x,
+        y:y,
+        w:100+Math.random()*40,
+        h:100+Math.random()*40,
+        height:60+Math.random()*120,
+        color:shades[Math.floor(Math.random()*shades.length)]
+      });
+    }
+  }
+
+  for (let i=0;i<80;i++) {
+    trees.push({
+      x:(Math.random()-.5)*1600,
+      y:(Math.random()-.5)*1600,
+      height:5+Math.random()*5
+    });
+  }
+}
+
+// ========================================
+// CAMERA PROJECTION
+// ========================================
+
+function project(x,y,z) {
+  const dx = x-player.x;
+  const dy = y-player.y;
+
+  const rx =
+    dx*Math.cos(-yaw) -
+    dy*Math.sin(-yaw);
+
+  const ry =
+    dx*Math.sin(-yaw) +
+    dy*Math.cos(-yaw);
+
+  const cz = 300/Math.max(1,ry);
+
+  return {
+    x:W/2+rx*cz,
+    y:H/2-(z-player.z+pitch*60)*cz*.6,
+    depth:ry,
+    scale:cz/300
+  };
+}
+
+// ========================================
+// COLLISION
+// ========================================
+
+function collide(p,r=16) {
+
+  for (const w of walls) {
+
+    if (
+      p.x+r>w.x-w.w/2 &&
+      p.x-r<w.x+w.w/2 &&
+      p.y+r>w.y-w.h/2 &&
+      p.y-r<w.y+w.h/2
+    ) {
+      const dx = p.x-w.x;
+      const dy = p.y-w.y;
+
+      if (Math.abs(dx)>Math.abs(dy)) {
+        p.x = w.x+Math.sign(dx)*(w.w/2+r);
+      } else {
+        p.y = w.y+Math.sign(dy)*(w.h/2+r);
+      }
+    }
+  }
+
+  const mb = mainBuilding;
+
+  if (
+    p.x+r>mb.x-mb.w/2 &&
+    p.x-r<mb.x+mb.w/2 &&
+    p.y+r>mb.y-mb.h/2 &&
+    p.y-r<mb.y+mb.h/2
+  ) {
+
+    const inDoor =
+      p.x>door.x &&
+      p.x<door.x+door.w &&
+      p.y>door.y-15 &&
+      p.y<door.y+35;
+
+    if (!inDoor) {
+      const dx = p.x-mb.x;
+      const dy = p.y-mb.y;
+
+      if (Math.abs(dx)>Math.abs(dy)) {
+        p.x = mb.x+Math.sign(dx)*(mb.w/2+r);
+      } else {
+        p.y = mb.y+Math.sign(dy)*(mb.h/2+r);
+      }
+
+      return "wall";
+    }
+
+    return "building";
+  }
+
+  for (const t of trees) {
+    const dx = p.x-t.x;
+    const dy = p.y-t.y;
+    const d = Math.hypot(dx,dy);
+
+    if (d<28 && d>0.1) {
+      p.x = t.x+dx/d*28;
+      p.y = t.y+dy/d*28;
+    }
+  }
+
+  p.x = Math.max(-900,Math.min(900,p.x));
+  p.y = Math.max(-900,Math.min(900,p.y));
+
+  return "open";
+}
+
+// ========================================
+// HUNTERS
+// ========================================
+
+function makeChaser(f,idx) {
+  const spawns = [
+    [0,800],
+    [800,0],
+    [-800,0],
+    [0,-800],
+    [600,600],
+    [-600,600]
+  ];
+
+  const sp = spawns[idx%spawns.length];
+
+  return {
+    data:f,
+    x:sp[0],
+    y:sp[1],
+    z:1.7,
+    speed:0,
+    tired:0,
+    stamina:100
+  };
+}
+
+// ========================================
+// AUDIO
+// ========================================
+
+function initAudio() {
+  try {
+    if (!audioContext) {
+      audioContext = new (
+        window.AudioContext ||
+        window.webkitAudioContext
+      )();
+    }
+
+    if (audioContext.state==="suspended") {
+      audioContext.resume();
+    }
+  } catch(e) {}
+}
+
+function playSound(audio) {
+  if (!audio || !audio.src) return;
+
+  audio.currentTime = 0;
+  audio.volume = 0.4;
+
+  audio.play().catch(()=>{});
+}
+
+function startMusic() {
+  bgMusic.volume = 0.25;
+  bgMusic.play().catch(()=>{});
+}
+
+function playScareSound() {
+  if (!audioContext) return;
+
+  try {
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+
+    osc.type = "sawtooth";
+
+    osc.frequency.setValueAtTime(
+      750,
+      audioContext.currentTime
+    );
+
+    osc.frequency.exponentialRampToValueAtTime(
+      65,
+      audioContext.currentTime+.55
+    );
+
+    gain.gain.setValueAtTime(
+      .25,
+      audioContext.currentTime
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+      .001,
+      audioContext.currentTime+.65
+    );
+
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+
+    osc.start();
+    osc.stop(audioContext.currentTime+.65);
+
+  } catch(e) {}
+}
+
+// ========================================
+// CAMERA MODE
+// ========================================
+
+function toggleCamera() {
+  cameraMode = cameraMode==="3rd" ? "1st" : "3rd";
+
+  document.getElementById("cameraMode").textContent =
+    cameraMode==="3rd"
+      ? "CAMERA: 3RD PERSON"
+      : "CAMERA: 1ST PERSON";
+}
+
+document.getElementById("cameraBtn").addEventListener(
+  "click",
+  toggleCamera
+);
 
 // ========================================
 // DRAWING HELPERS
 // ========================================
 
-function polygon(points,color,stroke=null){
- ctx.beginPath();
- ctx.moveTo(points[0].x,points[0].y);
- for(let i=1;i<points.length;i++){
-  ctx.lineTo(points[i].x,points[i].y);
- }
- ctx.closePath();
- ctx.fillStyle=color;
- ctx.fill();
+function drawSky() {
+  const grad = ctx.createLinearGradient(0,0,0,H);
 
- if(stroke){
-  ctx.strokeStyle=stroke;
-  ctx.lineWidth=2;
-  ctx.stroke();
- }
-}
+  grad.addColorStop(0,"#080018");
+  grad.addColorStop(.30,"#24105a");
+  grad.addColorStop(.55,"#6b176d");
+  grad.addColorStop(.75,"#e43b69");
+  grad.addColorStop(1,"#190d37");
 
-function drawSky(){
- const sky=ctx.createLinearGradient(0,0,0,H);
- sky.addColorStop(0,"#07001b");
- sky.addColorStop(.55,"#160044");
- sky.addColorStop(1,"#330044");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,W,H);
 
- ctx.fillStyle=sky;
- ctx.fillRect(0,0,W,H);
+  // Stars
+  for (let i=0;i<65;i++) {
+    const x=(i*173)%W;
+    const y=(i*83)%(H*.48);
 
- // Neon stars
- for(let i=0;i<55;i++){
-  const x=(i*173)%W;
-  const y=(i*83)%(H*.55);
-  ctx.fillStyle=i%2?"#00d9ff":"#ff39c9";
-  ctx.globalAlpha=.3+Math.sin(elapsed*.002+i)*.3;
-  ctx.fillRect(x,y,2,2);
- }
- ctx.globalAlpha=1;
+    ctx.globalAlpha=.35+Math.sin(elapsed*.002+i)*.25;
 
- // Horizon glow
- const glow=ctx.createRadialGradient(W/2,H*.52,10,W/2,H*.52,W*.6);
- glow.addColorStop(0,"rgba(255,0,180,.20)");
- glow.addColorStop(1,"rgba(0,0,0,0)");
- ctx.fillStyle=glow;
- ctx.fillRect(0,0,W,H);
-}
+    ctx.fillStyle=i%2 ? "#00d9ff" : "#ff39c9";
 
-function drawGround(){
- const ground=ctx.createLinearGradient(0,H*.45,0,H);
- ground.addColorStop(0,"#170b35");
- ground.addColorStop(1,"#050713");
- ctx.fillStyle=ground;
- ctx.fillRect(0,H*.45,W,H*.55);
-
- // Road perspective grid
- ctx.strokeStyle="rgba(0,220,255,.22)";
- ctx.lineWidth=1;
-
- for(let i=-12;i<=12;i++){
-  const p1=project(i*90,900,0);
-  const p2=project(i*90,-900,0);
-  ctx.beginPath();
-  ctx.moveTo(p1.x,p1.y);
-  ctx.lineTo(p2.x,p2.y);
-  ctx.stroke();
- }
-
- for(let i=0;i<18;i++){
-  const y=player.y+((i*100+elapsed*.15)%1800)-900;
-  const a=project(-900,y,0);
-  const b=project(900,y,0);
-  ctx.beginPath();
-  ctx.moveTo(a.x,a.y);
-  ctx.lineTo(b.x,b.y);
-  ctx.stroke();
- }
-}
-
-function drawBuilding(b){
- const bottom=project(b.x,b.y,0);
- const top=project(b.x,b.y,b.height);
- const left=project(b.x-b.w/2,b.y,0);
- const right=project(b.x+b.w/2,b.y,0);
-
- if(bottom.depth<0)return;
-
- const width=Math.abs(right.x-left.x);
- const height=Math.abs(bottom.y-top.y);
-
- if(width<1||height<1)return;
-
- const x=left.x;
- const y=top.y;
-
- ctx.fillStyle=b.color;
- ctx.globalAlpha=.8;
- ctx.fillRect(x,y,width,height);
- ctx.globalAlpha=1;
-
- ctx.strokeStyle="#00eaff";
- ctx.lineWidth=Math.max(1,2*bottom.scale);
- ctx.strokeRect(x,y,width,height);
-
- // Glowing windows
- const rows=5,cols=4;
- for(let r=0;r<rows;r++){
-  for(let c=0;c<cols;c++){
-   const wx=x+width*(.12+c*.21);
-   const wy=y+height*(.1+r*.16);
-   const ww=Math.max(1,width*.09);
-   const wh=Math.max(1,height*.07);
-
-   ctx.fillStyle=(r+c)%2?"#00eaff":"#ffcc33";
-   ctx.globalAlpha=.8;
-   ctx.fillRect(wx,wy,ww,wh);
+    ctx.fillRect(x,y,2,2);
   }
- }
- ctx.globalAlpha=1;
+
+  ctx.globalAlpha=1;
+
+  // Horizon glow
+  const glow = ctx.createRadialGradient(
+    W/2,H*.53,10,
+    W/2,H*.53,W*.65
+  );
+
+  glow.addColorStop(0,"rgba(255,0,180,.20)");
+  glow.addColorStop(1,"rgba(0,0,0,0)");
+
+  ctx.fillStyle=glow;
+  ctx.fillRect(0,0,W,H);
 }
 
-function drawTree(t){
- const p=project(t.x,t.y,0);
- if(p.depth<0||p.scale<.005)return;
+function drawGround() {
+  const ground = ctx.createLinearGradient(
+    0,H*.45,
+    0,H
+  );
 
- const h=t.height*18*p.scale;
- const w=9*p.scale;
+  ground.addColorStop(0,"#1b0b39");
+  ground.addColorStop(1,"#050713");
 
- ctx.fillStyle="#442016";
- ctx.fillRect(p.x-w/3,p.y-h*.35,w*.66,h*.35);
+  ctx.fillStyle=ground;
+  ctx.fillRect(0,H*.45,W,H*.55);
 
- ctx.shadowBlur=15*p.scale;
- ctx.shadowColor="#00ff88";
- ctx.fillStyle="#00b96b";
- ctx.beginPath();
- ctx.arc(p.x,p.y-h*.55,w*1.7,0,Math.PI*2);
- ctx.fill();
+  ctx.strokeStyle="rgba(0,229,255,.22)";
+  ctx.lineWidth=1;
 
- ctx.fillStyle="#00ffb7";
- ctx.beginPath();
- ctx.arc(p.x-w*.6,p.y-h*.7,w,0,Math.PI*2);
- ctx.fill();
+  // Perspective grid
+  for (let i=-800;i<=800;i+=100) {
+    const p1=project(i,-800,0);
+    const p2=project(i,800,0);
 
- ctx.shadowBlur=0;
+    if (p1.depth>0 && p2.depth>0) {
+      ctx.beginPath();
+      ctx.moveTo(p1.x,p1.y);
+      ctx.lineTo(p2.x,p2.y);
+      ctx.stroke();
+    }
+
+    const p3=project(-800,i,0);
+    const p4=project(800,i,0);
+
+    if (p3.depth>0 && p4.depth>0) {
+      ctx.beginPath();
+      ctx.moveTo(p3.x,p3.y);
+      ctx.lineTo(p4.x,p4.y);
+      ctx.stroke();
+    }
+  }
 }
 
-function drawMainBuilding(){
- const b=mainBuilding;
- const corners=[
-  project(b.x-b.w/2,b.y-b.h/2,0),
-  project(b.x+b.w/2,b.y-b.h/2,0),
-  project(b.x+b.w/2,b.y+b.h/2,0),
-  project(b.x-b.w/2,b.y+b.h/2,0)
- ];
+function drawBuilding(w) {
+  const base=project(w.x,w.y,0);
 
- const topCorners=[
-  project(b.x-b.w/2,b.y-b.h/2,170),
-  project(b.x+b.w/2,b.y-b.h/2,170),
-  project(b.x+b.w/2,b.y+b.h/2,170),
-  project(b.x-b.w/2,b.y+b.h/2,170)
- ];
+  if (base.depth<=0) return;
 
- if(corners[0].depth<0)return;
+  const top=project(w.x,w.y,w.height);
 
- polygon([topCorners[0],topCorners[1],corners[1],corners[0]],"#132c70","#00eaff");
- polygon([topCorners[1],topCorners[2],corners[2],corners[1]],"#091a50","#00aaff");
- polygon([topCorners[0],topCorners[3],corners[3],corners[0]],"#14265f","#00aaff");
- polygon(topCorners,"#164c9b","#00eaff");
+  const w2=w.w/2*base.scale;
+  const h=base.y-top.y;
 
- // Door
- const d1=project(door.x,door.y,0);
- const d2=project(door.x+door.w,door.y,0);
- const d3=project(door.x+door.w,door.y,75);
- const d4=project(door.x,door.y,75);
+  if (w2<.5 || h<.5) return;
 
- polygon([d1,d2,d3,d4],"#050817","#00ffff");
+  ctx.fillStyle=w.color;
+  ctx.globalAlpha=.88;
+  ctx.fillRect(base.x-w2,base.y-h,w2*2,h);
+  ctx.globalAlpha=1;
 
- ctx.fillStyle="#fff";
- ctx.font="bold 12px Arial";
- ctx.textAlign="center";
- const label=project(b.x,b.y,190);
- ctx.shadowBlur=15;
- ctx.shadowColor="#00eaff";
- ctx.fillText("CITY FOUR",label.x,label.y);
- ctx.shadowBlur=0;
+  ctx.strokeStyle="rgba(255,255,255,.65)";
+  ctx.lineWidth=Math.max(1,2*base.scale);
+
+  ctx.strokeRect(
+    base.x-w2,
+    base.y-h,
+    w2*2,
+    h
+  );
+
+  // Windows
+  const rows=4;
+  const cols=3;
+
+  for (let r=0;r<rows;r++) {
+    for (let c=0;c<cols;c++) {
+
+      const wx=base.x-w2+w2*.2+c*w2*.55;
+      const wy=base.y-h+h*.16+r*h*.19;
+
+      ctx.fillStyle=(r+c)%2 ? "#00eaff" : "#ffe16b";
+      ctx.globalAlpha=.85;
+
+      ctx.fillRect(
+        wx,
+        wy,
+        Math.max(1,w2*.2),
+        Math.max(1,h*.07)
+      );
+    }
+  }
+
+  ctx.globalAlpha=1;
 }
 
-function drawPlatforms(){
- for(const p of platforms){
-  const a=project(p.x-p.w/2,p.y-p.h/2,p.z);
-  const b=project(p.x+p.w/2,p.y-p.h/2,p.z);
-  const c=project(p.x+p.w/2,p.y+p.h/2,p.z);
-  const d=project(p.x-p.w/2,p.y+p.h/2,p.z);
+function drawMainBuilding() {
+  const mb=mainBuilding;
 
-  if(a.depth<0)continue;
+  const base=project(mb.x,mb.y,0);
 
-  polygon([a,b,c,d],"rgba(0,220,255,.38)","#00ffff");
+  if (base.depth<=0) return;
 
-  ctx.shadowBlur=15;
+  const top=project(mb.x,mb.y,170);
+
+  const w2=mb.w/2*base.scale;
+  const h=base.y-top.y;
+
+  // Main building body
+  const wallGrad=ctx.createLinearGradient(
+    base.x-w2,top.y,
+    base.x+w2,base.y
+  );
+
+  wallGrad.addColorStop(0,"#123d80");
+  wallGrad.addColorStop(.5,"#16234e");
+  wallGrad.addColorStop(1,"#07152f");
+
+  ctx.fillStyle=wallGrad;
+  ctx.fillRect(base.x-w2,base.y-h,w2*2,h);
+
+  ctx.strokeStyle="#00ccff";
+  ctx.lineWidth=3;
+  ctx.shadowBlur=18;
   ctx.shadowColor="#00ccff";
-  ctx.strokeStyle="#00ffff";
-  ctx.strokeRect(a.x,a.y,b.x-a.x,d.y-a.y);
+
+  ctx.strokeRect(base.x-w2,base.y-h,w2*2,h);
+
   ctx.shadowBlur=0;
- }
-}
 
-function drawCharacter(chaser){
- const p=project(chaser.x,chaser.y,chaser.z);
- if(p.depth<0||p.scale<.003)return;
+  // Building windows
+  for (let r=0;r<5;r++) {
+    for (let c=
+  
+ 
 
- const img=loadedImgs[chaser.data.name];
- const size=Math.max(12,65*p.scale);
+ 
 
- ctx.save();
- ctx.translate(p.x,p.y);
-
- // Shadow
- ctx.fillStyle="rgba(0,0,0,.45)";
- ctx.beginPath();
- ctx.ellipse(0,4,size*.4,size*.12,0,0,Math.PI*2);
- ctx.fill();
-
- if(img&&img.complete&&img.naturalWidth>0){
-  ctx.shadowBlur=20;
-  ctx.shadowColor=chaser.data.color;
-  ctx.drawImage(img,-size/2,-size,size,size);
- }else{
-  ctx.fillStyle=chaser.data.color;
-  ctx.shadowBlur=20;
-  ctx.shadowColor=chaser.data.color;
-  ctx.fillRect(-size/2,-size,size,size);
- }
-
- ctx.shadowBlur=0;
- ctx.strokeStyle=chaser.data.color;
- ctx.lineWidth=2;
- ctx.strokeRect(-size/2,-size,size,size);
-
- ctx.fillStyle="#fff";
- ctx.font="bold "+Math.max(9,12*p.scale)+"px Arial";
- ctx.textAlign="center";
- ctx.fillText(chaser.data.name,0,-size-7);
-
- ctx.restore();
-}
-
-function drawPlayer(){
- const x=W/2;
- const y=H*.72;
-
- ctx.save();
-
- // Player shadow
- ctx.fillStyle="rgba(0,0,0,.4)";
- ctx.beginPath();
- ctx.ellipse(x,y+5,20,7,0,0,Math.PI*2);
- ctx.fill();
-
- // Simple neon player silhouette
- ctx.shadowBlur=20;
- ctx.shadowColor="#00eaff";
- ctx.fillStyle="#00bfff";
-
- ctx.beginPath();
- ctx.arc(x,y-45-player.z*2,12,0,Math.PI*2);
- ctx.fill();
-
- ctx.fillRect(x-9,y-33-player.z*2,18,35);
-
- ctx.fillStyle="#fff";
- ctx.fillRect(x-12,y-5-player.z*2,8,20);
- ctx.fillRect(x+4,y-5-player.z*2,8,20);
-
- ctx.restore();
-}
-
-function drawScene(){
- drawSky();
- drawGround();
-
- const objects=[];
-
- walls.forEach(w=>{
-  const p=project(w.x,w.y,0);
-  if(p.depth>0)objects.push({depth:p.depth,type:"building",item:w});
- });
-
- trees.forEach(t=>{
-  const p=project(t.x,t.y,0);
-  if(p.depth>0)objects.push({depth:p.depth,type:"tree",item:t});
- });
-
- chasers.forEach(c=>{
-  const p=project(c.x,c.y,0);
-  if(p.depth>0)objects.push({depth:p.depth,type:"chaser",item:c});
- });
-
- objects.sort((a,b)=>b.depth-a.depth);
-
- for(const o of objects){
-  if(o.type==="building")drawBuilding(o.item);
-  if(o.type==="tree")drawTree(o.item);
-  if(o.type==="chaser")drawCharacter(o.item);
- }
-
- drawMainBuilding();
- drawPlatforms();
- drawPlayer();
-
- // Screen vignette
- const vignette=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*.2,W/2,H/2,Math.max(W,H)*.75);
- vignette.addColorStop(0,"rgba(0,0,0,0)");
- vignette.addColorStop(1,"rgba(0,0,0,.45)");
- ctx.fillStyle=vignette;
- ctx.fillRect(0,0,W,H);
-}
-
-// ========================================
-// JOYSTICK
-// ========================================
-
-const joy=document.getElementById("joystick");
-const knob=document.getElementById("joyKnob");
-let joyPointer=null;
-
-function joyMove(e){
- const r=joy.getBoundingClientRect();
-
- let dx=(e.clientX-(r.left+r.width/2))/(r.width*.34);
- let dy=(e.clientY-(r.top+r.height/2))/(r.height*.34);
-
- const len=Math.hypot(dx,dy);
- if(len>1){
-  dx/=len;
-  dy/=len;
- }
-
- joyX=dx;
- joyY=dy;
-
- knob.style.left=(50+dx*34)+"%";
- knob.style.top=(50+dy*34)+"%";
-}
-
-joy.addEventListener("pointerdown",e=>{
- e.preventDefault();
- joyPointer=e.pointerId;
- joy.setPointerCapture(e.pointerId);
- joyMove(e);
-});
-
-joy.addEventListener("pointermove",e=>{
- if(e.pointerId===joyPointer)joyMove(e);
-});
-
-function resetJoy(){
- joyPointer=null;
- joyX=0;
- joyY=0;
- knob.style.left="50%";
- knob.style.top="50%";
-}
-
-joy.addEventListener("pointerup",resetJoy);
-joy.addEventListener("pointercancel",resetJoy);
-
-// ========================================
-// JUMP AND SPRINT CONTROLS
-// ========================================
-
-const jumpBtn=document.getElementById("jumpBtn");
-const sprintBtn=document.getElementById("sprintBtn");
-
-function jump(){
- if(!isPlaying||!onGround)return;
- playerVelY=12;
- onGround=false;
-
- if(navigator.vibrate)navigator.vibrate(25);
-}
-
-jumpBtn.addEventListener("pointerdown",e=>{
- e.preventDefault();
- jump();
-});
-
-sprintBtn.addEventListener("pointerdown",e=>{
- e.preventDefault();
- isSprinting=true;
-});
-
-function stopSprint(){
- isSprinting=false;
-}
-
-sprintBtn.addEventListener("pointerup",stopSprint);
-sprintBtn.addEventListener("pointercancel",stopSprint);
-sprintBtn.addEventListener("lostpointercapture",stopSprint);
-
-// Keyboard support
-addEventListener("keydown",e=>{
- keys[e.key.toLowerCase()]=true;
-
- if(e.code==="Space")jump();
- if(e.key==="Shift")isSprinting=true;
-});
-
-addEventListener("keyup",e=>{
- keys[e.key.toLowerCase()]=false;
- if(e.key==="Shift")isSprinting=false;
-});
-
-// ========================================
-// CAMERA
-// ========================================
-
-function toggleCamera(){
- cameraMode=cameraMode==="3rd"?"1st":"3rd";
- document.getElementById("cameraMode").textContent=
-  "CAMERA: "+(cameraMode==="3rd"?"3RD PERSON":"1ST PERSON");
-}
-
-document.getElementById("cameraBtn").addEventListener("click",toggleCamera);
-
-// ========================================
-// GAME UPDATE
-// ========================================
-
-function update(dt){
- if(!isPlaying||gameEnded)return;
-
- const frame=dt/16.6667;
- elapsed+=dt;
-
- timerAccumulator+=dt;
- if(timerAccumulator>=1000){
-  timerAccumulator-=1000;
-  timeLeft--;
-  document.getElementById("timer").textContent=timeLeft;
-
-  if(timeLeft<=0){
-   winGame();
-   return;
-  }
- }
-
- let forward=-joyY;
- let sideways=joyX;
-
- if(keys.w||keys.arrowup)forward=1;
- if(keys.s||keys.arrowdown)forward=-1;
- if(keys.a||keys.arrowleft)sideways=-1;
- if(keys.d||keys.arrowright)sideways=1;
-
- const moving=Math.abs(forward)+Math.abs(sideways)>.05;
-
- let baseSpeed=isSprinting&&stamina>0?11.5:7.8;
-
- if(isSprinting&&moving){
-  stamina=Math.max(0,stamina-.8*frame);
-  if(stamina<=0)isSprinting=false;
- }else{
-  stamina=Math.min(100,stamina+.35*frame);
- }
-
- // Correct camera-relative movement
- const moveX=(-Math.sin(yaw)*forward+Math.cos(yaw)*sideways)*baseSpeed*frame;
- const moveY=( Math.cos(yaw)*forward+Math.sin(yaw)*sideways)*baseSpeed*frame;
-
- const oldX=player.x;
- const oldY=player.y;
-
- player.x+=moveX;
- player.y+=moveY;
-
- collide(player,14);
-
- // Keep movement from clipping through walls
- if(Math.abs(player.x-oldX)>baseSpeed*frame*1.1)player.x=oldX;
- if(Math.abs(player.y-oldY)>baseSpeed*frame*1.1)player.y=oldY;
-
- // Jump physics
- if(!onGround){
-  player.z+=playerVelY*frame*.12;
-  playerVelY-=.65*frame;
-
-  if(player.z<=1.7){
-   player.z=1.7;
-   playerVelY=0;
-   onGround=true;
-  }
- }
-
- // Hunters chase the player
- let closest=Infinity;
-
- for(const c of chasers){
-  const dx=player.x-c.x;
-  const dy=player.y-c.y;
-  const d=Math.hypot(dx,dy);
-
-  if(d<closest)closest=d;
-
-  let cs=c.data.maxSpeed*1.15;
-
-  if(d<220)cs*=1.35;
-  if(d<100)cs*=1.15;
-
-  c.x+=(dx/(d||1))*cs*frame;
-  c.y+=(dy/(d||1))*cs*frame;
-
-  collide(c,14);
-
-  // Catch detection
-  if(d<25&&player.z<3.5){
-   showJumpScare(c);
-   return;
-  }
- }
-
- document.getElementById("threat").textContent=
-  closest===Infinity?"--":Math.round(closest);
-
- document.getElementById("staminaFill").style.width=stamina+"%";
- document.getElementById("speedInfo").textContent=
-  "SPEED: "+(moving?Math.round(baseSpeed*10):0);
-
- const danger=Math.max(0,1-closest/260);
- document.getElementById("dangerVignette").style.opacity=danger*.65;
-
- // Slight camera shake when hunters are close
- if(closest<100){
-  canvas.style.transform=
-   "translate("+((Math.random()-.5)*danger*3)+"px,"+
-   ((Math.random()-.5)*danger*3)+"px)";
- }else{
-  canvas.style.transform="none";
- }
-}
-
-// ========================================
-// WIN / RESTART
-// ========================================
-
-function winGame(){
- isPlaying=false;
- gameEnded=true;
- bgMusic.pause();
-
- const overlay=document.getElementById("jumpScare");
- overlay.style.display="flex";
- overlay.classList.remove("shaking");
-
- document.getElementById("scareImage").style.display="none";
- document.getElementById("scareSub").textContent="YOU SURVIVED THE CITY";
- document.getElementById("scareText").textContent="YOU WIN!";
- document.getElementById("scareText").style.color="#00ff88";
- document.getElementById("scareButtons").style.display="flex";
-
- if(navigator.vibrate)navigator.vibrate([100,60,100]);
-}
-
-function resetGame(){
- timeLeft=90;
- stamina=100;
- isSprinting=false;
- player={x:0,y:0,z:1.7};
- playerVelY=0;
- onGround=true;
- yaw=0;
- pitch=.35;
- elapsed=0;
- timerAccumulator=0;
- gameEnded=false;
- scareLocked=false;
-
- chasers=FILES.map((f,i)=>makeChaser(f,i));
-
- document.getElementById("timer").textContent=timeLeft;
- document.getElementById("threat").textContent="--";
- document.getElementById("staminaFill").style.width="100%";
- document.getElementById("dangerVignette").style.opacity=0;
-
- document.getElementById("scareImage").style.display="block";
- document.getElementById("scareText").style.color="red";
- document.getElementById("scareButtons").style.display="none";
- document.getElementById("jumpScare").style.display="none";
-
- resetJoy();
-}
-
-document.getElementById("scareRestart").addEventListener("click",()=>{
- document.getElementById("jumpScare").style.display="none";
- document.getElementById("menu").style.display="flex";
-});
-
-// ========================================
-// MAIN GAME LOOP
-// ========================================
-
-function loop(timestamp){
- if(!lastTime)lastTime=timestamp;
-
- const dt=Math.min(timestamp-lastTime,40);
- lastTime=timestamp;
-
- if(isPlaying){
-  update(dt);
-  drawScene();
- }
-
- requestAnimationFrame(loop);
-}
-
-// ========================================
-// START GAME
-// ========================================
-
-async function startGame(){
- initAudio();
-
- // Try landscape lock where supported
- try{
-  if(document.documentElement.requestFullscreen){
-   await document.documentElement.requestFullscreen();
-  }
- }catch(e){}
-
- try{
-  if(screen.orientation&&screen.orientation.lock){
-   await screen.orientation.lock("landscape");
-  }
- }catch(e){
-  // If the browser does not allow locking,
-  // rotate the phone manually.
- }
-
- resizeCanvas();
- resetGame();
- generateWorld();
-
- document.getElementById("menu").style.display="none";
-
- isPlaying=true;
- lastTime=0;
-
- startMusic();
-}
-
-document.getElementById("startBtn").addEventListener("click",startGame);
-
-// ========================================
-// INITIALIZE
-// ========================================
-
-preloadImages(()=>{
- buildWheel();
-});
-
-generateWorld();
-chasers=FILES.map((f,i)=>makeChaser(f,i));
-
-requestAnimationFrame(loop);
-
-</script>
-</body>
- </html>
+ 
