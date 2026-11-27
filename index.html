@@ -1,1107 +1,151 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#080018">
-<title>NIGHT RUN - CITY FOUR</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>NIGHT RUN: CITY OF FOUR</title>
+<meta name="theme-color" content="#080d13">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg">
+<link rel="apple-touch-icon" href="./icon.svg">
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-}
-
-html, body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: #080018;
-  font-family: Arial, sans-serif;
-  color: white;
-  touch-action: none;
-  user-select: none;
-}
-
-#gameCanvas {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-#hud {
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  right: 10px;
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  z-index: 10;
-  pointer-events: none;
-}
-
-.hudBox {
-  background: rgba(0,0,0,.72);
-  border: 1px solid #00ccff;
-  padding: 8px 12px;
-  border-radius: 12px;
-  font-weight: bold;
-  font-size: 12px;
-  box-shadow: 0 0 15px #00ccff77;
-  backdrop-filter: blur(8px);
-}
-
-#staminaBar {
-  width: 125px;
-  height: 10px;
-  background: #333;
-  border-radius: 8px;
-  overflow: hidden;
-  margin-top: 5px;
-}
-
-#staminaFill {
-  height: 100%;
-  width: 100%;
-  background: linear-gradient(90deg,#00ff88,#ffff00);
-  transition: width .12s;
-}
-
-#speedInfo {
-  margin-top: 5px;
-  font-size: 11px;
-}
-
-#joystick {
-  position: fixed;
-  left: 20px;
-  bottom: 22px;
-  width: 130px;
-  height: 130px;
-  background: rgba(255,255,255,.12);
-  border: 2px solid rgba(255,255,255,.55);
-  border-radius: 50%;
-  z-index: 20;
-  box-shadow: 0 0 22px rgba(0,204,255,.55);
-  touch-action: none;
-  backdrop-filter: blur(5px);
-}
-
-#joyKnob {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 56px;
-  height: 56px;
-  background: radial-gradient(circle at 30% 25%,#fff,#b5c7dc 70%,#526b80);
-  border-radius: 50%;
-  transform: translate(-50%,-50%);
-  box-shadow: 0 0 18px #fff;
-}
-
-#btns {
-  position: fixed;
-  right: 20px;
-  bottom: 22px;
-  display: flex;
-  gap: 12px;
-  z-index: 20;
-}
-
-.btn {
-  width: 76px;
-  height: 76px;
-  border-radius: 50%;
-  border: 2px solid white;
-  font-weight: 900;
-  font-size: 12px;
-  color: white;
-  touch-action: none;
-}
-
-#jumpBtn {
-  background: #ff8800;
-  box-shadow: 0 0 18px #ff8800;
-}
-
-#sprintBtn {
-  background: #ff0044;
-  box-shadow: 0 0 18px #ff0044;
-}
-
-#cameraBtn {
-  position: fixed;
-  right: 15px;
-  top: 100px;
-  z-index: 20;
-  padding: 9px 12px;
-  border: 1px solid #00ccff;
-  border-radius: 9px;
-  color: white;
-  background: rgba(0,10,30,.85);
-  font-weight: bold;
-}
-
-#menu {
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(ellipse at center,#190044,#050014 80%);
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  text-align: center;
-  padding: 15px;
-  overflow-y: auto;
-}
-
-#menu h1 {
-  font-size: clamp(34px,8vw,48px);
-  letter-spacing: 3px;
-  color: #00ccff;
-  text-shadow: 0 0 25px #00ccff;
-}
-
-#startBtn {
-  padding: 15px 42px;
-  font-size: 19px;
-  font-weight: 900;
-  background: #00ff88;
-  border: none;
-  border-radius: 12px;
-  box-shadow: 0 0 20px #00ff88;
-  color: #001b13;
-}
-
-#wheel {
-  position: relative;
-  width: 155px;
-  height: 155px;
-  border: 3px solid #00ccff;
-  border-radius: 50%;
-  margin: 5px auto;
-  box-shadow: 0 0 20px #00ccff66;
-}
-
-#wheel img {
-  position: absolute;
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
-  border: 3px solid white;
-  object-fit: cover;
-  background: #111;
-}
-
-#previews {
-  display: flex;
-  gap: 8px;
-}
-
-#previews img {
-  width: 53px;
-  height: 53px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #00ccff;
-  background: #111;
-}
-
-#jumpScare {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  display: none;
-  justify-content: center;
-  align-items: center;
-  background: #000;
-  overflow: hidden;
-}
-
-#scareImage {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: contrast(1.4) brightness(1.15) saturate(1.5);
-}
-
-#scareText {
-  position: absolute;
-  bottom: 12%;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-size: clamp(30px,8vw,75px);
-  font-weight: 1000;
-  color: #ff001e;
-  text-shadow: 0 0 12px red,0 0 35px red;
-  pointer-events: none;
-}
-
-#scareSub {
-  position: absolute;
-  top: 8%;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-size: 15px;
-  letter-spacing: 5px;
-  color: white;
-  text-shadow: 0 0 12px red;
-}
-
-#scareRestart {
-  position: absolute;
-  bottom: 3%;
-  padding: 13px 28px;
-  border: none;
-  border-radius: 10px;
-  background: #ff1744;
-  color: white;
-  font-weight: bold;
-  font-size: 15px;
-  display: none;
-}
-
-#dangerVignette {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 5;
-  opacity: 0;
-  background: radial-gradient(transparent 40%,rgba(255,0,30,.55));
-  transition: opacity .15s;
-}
-
-@keyframes shake {
-  0% { transform: translate(0,0) scale(1.03); }
-  15% { transform: translate(-15px,12px) scale(1.03); }
-  30% { transform: translate(15px,-12px) scale(1.03); }
-  45% { transform: translate(-12px,-12px) scale(1.03); }
-  60% { transform: translate(12px,12px) scale(1.03); }
-  75% { transform: translate(-8px,5px) scale(1.03); }
-  100% { transform: translate(0,0) scale(1); }
-}
-
-.shaking {
-  animation: shake .4s;
-}
-
-@media (orientation:landscape) {
-  #joystick {
-    width: 112px;
-    height: 112px;
-    left: 18px;
-    bottom: 14px;
-  }
-
-  #joyKnob {
-    width: 49px;
-    height: 49px;
-  }
-
-  #btns {
-    right: 18px;
-    bottom: 14px;
-  }
-
-  .btn {
-    width: 68px;
-    height: 68px;
-  }
-
-  #hud {
-    top: 7px;
-  }
-
-  #cameraBtn {
-    top: 82px;
-  }
-
-  #wheel {
-    width: 120px;
-    height: 120px;
-  }
-
-  #wheel img {
-    width: 43px;
-    height: 43px;
-  }
-
-  #menu {
-    gap: 5px;
-  }
-
-  #previews img {
-    width: 42px;
-    height: 42px;
-  }
-}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;background:#05090e;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;touch-action:none}
+#game{position:fixed;inset:0;width:100%;height:100%;display:block}
+#vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.85) 100%);z-index:2}
+#hud{position:fixed;top:0;left:0;right:0;padding:10px 14px;display:flex;justify-content:space-between;align-items:flex-start;z-index:5;font-weight:900;text-shadow:0 2px 8px #000}
+#score{font-size:20px;letter-spacing:.5px}
+#score small{display:block;font-size:10px;letter-spacing:2px;color:#7ee8ff;opacity:.9}
+#orbs{font-size:18px;color:#ffe45e}
+#staminaBar{width:120px;height:8px;background:rgba(255,255,255,.2);border-radius:99px;overflow:hidden;margin-top:6px}
+#staminaFill{height:100%;width:100%;background:linear-gradient(90deg,#00f0ff,#a0ff6a);transition:width .1s}
+#msg{position:fixed;top:38%;left:0;right:0;text-align:center;z-index:6;font-size:22px;font-weight:900;letter-spacing:2px;text-shadow:0 0 20px #ff0055,0 4px 10px #000;opacity:0;transition:opacity .3s;pointer-events:none}
+#joy{position:fixed;left:18px;bottom:22px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.25);z-index:10}
+#knob{position:absolute;left:35px;top:35px;width:50px;height:50px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#fff,#7ee8ff);box-shadow:0 0 20px #00f0ff}
+#runBtn{position:fixed;right:20px;bottom:110px;width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,#ff2d55,#ff9f0a);border:3px solid #fff;z-index:10;color:#fff;font-weight:900;font-size:13px;box-shadow:0 0 25px #ff2d55}
+#lookHint{position:fixed;right:14px;top:70px;z-index:5;font-size:11px;opacity:.7;text-align:right;line-height:1.4}
+#start{position:fixed;inset:0;z-index:20;background:linear-gradient(180deg,#05090e 0%,#0a1a2e 50%,#2a0a2e 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}
+#start img{width:110px;height:110px;filter:drop-shadow(0 0 25px #00f0ff);border-radius:24px}
+#start h1{font-size:36px;line-height:.95;margin:14px 0 6px;letter-spacing:1px;text-shadow:0 0 25px #ff2d55}
+#start h1 span{color:#00f0ff}
+#start p{opacity:.85;font-size:14px;line-height:1.5;max-width:340px}
+#playBtn{margin-top:20px;padding:16px 42px;font-size:19px;font-weight:900;border:none;border-radius:99px;background:linear-gradient(90deg,#00f0ff,#ff2d55);color:#fff;box-shadow:0 10px 30px rgba(0,240,255,.4)}
+#playBtn:active{transform:scale(.96)}
+#scare{position:fixed;inset:0;z-index:99;background:#000;display:none;align-items:center;justify-content:center;flex-direction:column}
+#scare div{font-size:110px;animation:shake .08s infinite}
+@keyframes shake{0%{transform:translate(3px,-3px) scale(1.1)}50%{transform:translate(-4px,3px) scale(1.25)}100%{transform:translate(3px,3px) scale(1.1)}}
+#scare b{font-size:26px;letter-spacing:4px;color:#ff2d55;margin-top:10px}
+#over{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.92);display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px}
+#over h2{font-size:32px;color:#ff2d55}
+#over button{margin-top:18px;padding:14px 34px;border:none;border-radius:99px;background:#00f0ff;color:#000;font-weight:900;font-size:17px}
 </style>
 </head>
-
 <body>
+<canvas id="game"></canvas>
+<div id="vignette"></div>
+<div id="hud"><div id="score">0<small>DISTANCE</small><div id="staminaBar"><div id="staminaFill"></div></div></div><div style="text-align:right"><div id="orbs">💎 0 / 4</div><div style="font-size:11px;opacity:.8">FIND 4 ORBS TO ESCAPE</div></div></div>
+<div id="lookHint">👆 DRAG RIGHT SIDE<br>TO LOOK AROUND</div>
+<div id="msg"></div>
+<div id="joy"><div id="knob"></div></div>
+<button id="runBtn">RUN 🏃</button>
 
-<canvas id="gameCanvas"></canvas>
-<div id="dangerVignette"></div>
-
-<div id="hud">
-  <div class="hudBox">
-    THREAT: <span id="threat">--</span>m<br>
-    CITY SECTOR 01<br>
-    TIME: <span id="timer">90</span>s<br>
-    <span id="cameraMode">CAMERA: 3RD PERSON</span>
-  </div>
-
-  <div class="hudBox">
-    STAMINA
-    <div id="staminaBar">
-      <div id="staminaFill"></div>
-    </div>
-    <div id="speedInfo">SPEED: 0</div>
-  </div>
+<div id="start">
+<img src="./icon.svg" alt="logo">
+<h1>NIGHT RUN<br><span>CITY OF FOUR</span></h1>
+<p>Takbo ka sa neon city. Kunin mo yung <b style="color:#ffe45e">4 na orbs</b> bago ka abutan ng halimaw.<br>Joystick = galaw &nbsp;•&nbsp; Drag = lingon &nbsp;•&nbsp; RUN = sprint</p>
+<button id="playBtn">▶ START RUN</button>
+<p style="margin-top:12px;font-size:11px;opacity:.6">Best sa landscape • Pwedeng i-install • Gumagana offline</p>
 </div>
 
-<button id="cameraBtn">CAMERA</button>
-
-<div id="joystick">
-  <div id="joyKnob"></div>
-</div>
-
-<div id="btns">
-  <button class="btn" id="jumpBtn">JUMP</button>
-  <button class="btn" id="sprintBtn">SPRINT</button>
-</div>
-
-<div id="jumpScare">
-  <img id="scareImage" src="63.jpg" alt="Hunter">
-  <div id="scareSub">YOU HAVE BEEN CAUGHT BY</div>
-  <div id="scareText">BOOOOO!</div>
-  <button id="scareRestart">TRY AGAIN</button>
-</div>
-
-<div id="menu">
-  <h1>NIGHT RUN</h1>
-  <p>CITY FOUR - VIBRANT HARDCORE</p>
-  <p style="color:#ffcc00;font-size:12px">
-    ⚠ FAST HUNTERS • FULL SCREEN JUMPSCARE
-  </p>
-
-  <div id="wheel"></div>
-
-  <div style="display:flex;gap:8px">
-    <input type="file" id="file0" accept="image/*" hidden>
-    <input type="file" id="file1" accept="image/*" hidden>
-    <input type="file" id="file2" accept="image/*" hidden>
-    <input type="file" id="file3" accept="image/*" hidden>
-
-    <img id="prev0" alt="BOSENG">
-    <img id="prev1" alt="MICHAEL">
-    <img id="prev2" alt="SPEED">
-    <img id="prev3" alt="63">
-  </div>
-
-  <button id="startBtn">▶ START RUN</button>
-
-  <p style="font-size:11px;opacity:.7;line-height:1.6">
-    Joystick = Move • JUMP = Jump • SPRINT = Hold<br>
-    Reach the blue building and survive!
-  </p>
-</div>
-
-<audio id="bgMusic" loop></audio>
-<audio id="speedSound"></audio>
-<audio id="heheSound"></audio>
-<audio id="busingSound"></audio>
+<div id="scare"><div>👹</div><b>NAHABOL KA!</b></div>
+<div id="over"><h2>GAME OVER</h2><p id="overText" style="margin-top:8px;opacity:.8"></p><button onclick="location.reload()">🔄 TAKBO ULIT</button></div>
 
 <script>
-"use strict";
-
-// ========================================
-// NIGHT RUN - CITY FOUR
-// ORIGINAL GAME ENGINE + IMPROVEMENTS
-// ========================================
-
-const FILES = [
-  {
-    name:"BOSENG",
-    img:"boseng.jpg",
-    speed:2.0,
-    color:"#ff4444",
-    desc:"Tough and consistent. Does not tire easily.",
-    maxSpeed:2.2,
-    fatigueRate:0.6
-  },
-  {
-    name:"MICHAEL",
-    img:"Michael.jpg",
-    speed:2.5,
-    color:"#44ff44",
-    desc:"Balanced. Good speed and stamina.",
-    maxSpeed:2.7,
-    fatigueRate:1.0
-  },
-  {
-    name:"SPEED",
-    img:"speed.jpg",
-    speed:3.0,
-    color:"#4488ff",
-    desc:"Quick start but tires faster than most.",
-    maxSpeed:3.2,
-    fatigueRate:1.5
-  },
-  {
-    name:"63",
-    img:"63.jpg",
-    speed:3.6,
-    color:"#ffff00",
-    desc:"Fastest runner but needs frequent rest.",
-    maxSpeed:4.0,
-    fatigueRate:2.5
-  }
-];
-
-// Original speed multiplier
-FILES.forEach(f => {
-  f.speed *= 1.9;
-  f.maxSpeed *= 1.9;
-});
-
-// ========================================
-// GAME VARIABLES
-// ========================================
-
-let loadedImgs = {};
-
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-
-let W = innerWidth;
-let H = innerHeight;
-
-let isPlaying = false;
-let gameEnded = false;
-
-let timeLeft = 90;
-let stamina = 100;
-let isSprinting = false;
-
-let cameraMode = "3rd";
-
-let yaw = 0;
-let pitch = 0.35;
-
-let playerVelY = 0;
-let onGround = true;
-
-let player = {
-  x:0,
-  y:0,
-  z:1.7
-};
-
-let chasers = [];
-let keys = {};
-
-let joyX = 0;
-let joyY = 0;
-
-let walls = [];
-let trees = [];
-
-let mainBuilding = {
-  x:0,
-  y:-420,
-  w:260,
-  h:260
-};
-
-let door = {
-  x:-35,
-  y:-300,
-  w:70,
-  h:25
-};
-
-let platforms = [
-  {x:0,y:-340,w:65,h:65,z:3.5},
-  {x:55,y:-370,w:55,h:55,z:5.5},
-  {x:-55,y:-400,w:55,h:55,z:7.5},
-  {x:0,y:-430,w:65,h:65,z:9.5},
-  {x:0,y:-460,w:55,h:55,z:11.5}
-];
-
-const bgMusic = document.getElementById("bgMusic");
-const speedSound = document.getElementById("speedSound");
-const heheSound = document.getElementById("heheSound");
-const busingSound = document.getElementById("busingSound");
-
-let lastTime = 0;
-let elapsed = 0;
-let timerAccumulator = 0;
-
-let scareCount = 0;
-let audioContext = null;
-
-// ========================================
-// CANVAS RESIZE
-// ========================================
-
-function resizeCanvas() {
-  W = innerWidth;
-  H = innerHeight;
-
-  canvas.width = W;
-  canvas.height = H;
+const cv=document.getElementById('game'),ctx=cv.getContext('2d');
+let W,H;function rs(){W=cv.width=innerWidth;H=cv.height=innerHeight}addEventListener('resize',rs);rs();
+let px=8,py=8,ang=0,score=0,stamina=100,orbsGot=0,running=false,dead=false,started=false;
+let jx=0,jy=0,lookX=0;
+const map=[
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1],
+[1,0,1,0,1,0,0,1,0,1,0,1,0,1,0,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,1],
+[1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1],
+[1,0,1,0,1,0,0,1,0,1,0,1,0,1,0,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]];
+const orbs=[{x:2.5,y:2.5,taken:false},{x:13.5,y:2.5,taken:false},{x:2.5,y:9.5,taken:false},{x:13.5,y:9.5,taken:false}];
+let mx=13,my=8,mAng=0;
+function showMsg(t){const m=document.getElementById('msg');m.textContent=t;m.style.opacity=1;setTimeout(()=>m.style.opacity=0,1800)}
+function beep(f,d){try{const a=new (window.AudioContext||window.webkitAudioContext)();const o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=f;g.gain.value=.15;o.start();o.stop(a.currentTime+d)}catch(e){}}
+// joystick
+const joy=document.getElementById('joy'),knob=document.getElementById('knob');
+let joyId=null;
+joy.addEventListener('touchstart',e=>{joyId=e.changedTouches[0].identifier;moveJoy(e)}, {passive:false});
+joy.addEventListener('touchmove',e=>{if(e.changedTouches[0].identifier===joyId)moveJoy(e);e.preventDefault()}, {passive:false});
+function moveJoy(e){const t=e.changedTouches[0],r=joy.getBoundingClientRect();let dx=t.clientX-(r.left+60),dy=t.clientY-(r.top+60);let l=Math.hypot(dx,dy);if(l>40){dx=dx/l*40;dy=dy/l*40}knob.style.left=(35+dx)+'px';knob.style.top=(35+dy)+'px';jx=dx/40;jy=dy/40}
+function endJoy(){jx=0;jy=0;knob.style.left='35px';knob.style.top='35px'}
+addEventListener('touchend',endJoy);
+// look drag
+let lookId=null,lastX=0;
+addEventListener('touchstart',e=>{for(let t of e.changedTouches){if(t.clientX>W*0.5&&lookId===null){lookId=t.identifier;lastX=t.clientX}}},{passive:true});
+addEventListener('touchmove',e=>{for(let t of e.changedTouches){if(t.identifier===lookId){ang+=(t.clientX-lastX)*0.005;lastX=t.clientX}}},{passive:true});
+addEventListener('touchend',e=>{for(let t of e.changedTouches){if(t.identifier===lookId)lookId=null}});
+// run
+const runBtn=document.getElementById('runBtn');
+runBtn.addEventListener('touchstart',e=>{e.preventDefault();running=true;runBtn.style.transform='scale(.9)'});
+addEventListener('touchend',()=>{running=false;runBtn.style.transform='scale(1)'});
+document.getElementById('playBtn').onclick=()=>{document.getElementById('start').style.display='none';started=true;showMsg('TAKBO! KUNIN MO YUNG 4 ORBS!');beep(440,.2)};
+function cast(rx,ry,ra){let d=0;while(d<16){d+=0.05;let x=rx+Math.cos(ra)*d,y=ry+Math.sin(ra)*d;let mx2=Math.floor(x),my2=Math.floor(y);if(map[my2]&&map[my2][mx2]===1)return d}return 16}
+function draw(){
+ctx.fillStyle='#05090e';ctx.fillRect(0,0,W,H);
+// sky
+let grad=ctx.createLinearGradient(0,0,0,H/2);grad.addColorStop(0,'#2a0a4a');grad.addColorStop(.5,'#0a1a4a');grad.addColorStop(1,'#ff2d55');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H/2);
+ctx.fillStyle='#ffe45e';ctx.beginPath();ctx.arc(W*0.8,60,22,0,7);ctx.fill();
+ctx.fillStyle='rgba(255,255,255,.9)';for(let i=0;i<40;i++){ctx.fillRect((i*97)%W,(i*53)%(H/2),2,2)}
+// ground
+ctx.fillStyle='#0a0f1a';ctx.fillRect(0,H/2,W,H/2);
+ctx.fillStyle='rgba(0,240,255,.25)';for(let i=0;i<20;i++){ctx.fillRect(0,H/2+ (i*20)%(H/2),W,1)}
+const FOV=Math.PI/3;
+for(let x=0;x<W;x+=2){
+let ra=ang-FOV/2+FOV*x/W;let dist=cast(px,py,ra);let corr=dist*Math.cos(ra-ang);if(corr<0.1)corr=0.1;let h=H/corr*0.9;
+let shade=255-Math.min(220,corr*28);
+// building color neon
+let colors=['#00f0ff','#ff2d55','#ffe45e','#a0ff6a','#b44aff'];
+let c=colors[Math.floor(ra*10)%5];
+ctx.fillStyle=c;ctx.globalAlpha=Math.max(.15,1-corr/10);ctx.fillRect(x,H/2-h/2,2,h);
+// windows
+ctx.fillStyle='#fff';if(Math.floor(h)%3===0)ctx.fillRect(x,H/2-h/3,2,3);
+ctx.globalAlpha=1;
+ctx.fillStyle=`rgb(${shade},${shade},${shade})`;ctx.fillRect(x,H/2-h/2,2,2);
 }
-
-resizeCanvas();
-
-addEventListener("resize", resizeCanvas);
-
-addEventListener("orientationchange", () => {
-  setTimeout(resizeCanvas, 250);
-});
-
-// ========================================
-// IMAGE LOADING
-// ========================================
-
-function preloadImages(callback) {
-  let count = 0;
-
-  FILES.forEach(f => {
-    const img = new Image();
-
-    img.onload = finish;
-    img.onerror = finish;
-
-    function finish() {
-      count++;
-
-      if (count >= FILES.length) {
-        buildWheel();
-
-        if (callback) callback();
-      }
-    }
-
-    img.src = f.img;
-    loadedImgs[f.name] = img;
-  });
+// orbs
+for(let o of orbs){if(o.taken)continue;let dx=o.x-px,dy=o.y-py;let d=Math.hypot(dx,dy);if(d<0.8){o.taken=true;orbsGot++;document.getElementById('orbs').textContent=`💎 ${orbsGot} / 4`;beep(880,.3);showMsg(orbsGot===4?'NAKUHA MO LAHAT! TUMAKBO SA EXIT!':'ORB NAKUHA! '+(4-orbsGot)+' PA!');if(orbsGot===4){showMsg('🏆 PANALO KA! NAKATAKAS KA!');setTimeout(()=>{document.getElementById('over').style.display='flex';document.getElementById('over').querySelector('h2').textContent='YOU ESCAPED!';document.getElementById('overText').textContent='Score: '+Math.floor(score)},800)}}let a=Math.atan2(dy,dx)-ang;while(a>Math.PI)a-=Math.PI*2;while(a<-Math.PI)a+=Math.PI*2;if(Math.abs(a)<0.6){let sx=W/2+a/(FOV/2)*(W/2);let sy=H/2+ (1/d)*40;ctx.fillStyle='#ffe45e';ctx.shadowColor='#ffe45e';ctx.shadowBlur=20;ctx.beginPath();ctx.arc(sx,sy,Math.max(6,18/d),0,7);ctx.fill();ctx.shadowBlur=0}}
+// monster
+let mdx=mx-px,mdy=my-py;let md=Math.hypot(mdx,mdy);let ma=Math.atan2(mdy,mdx)-ang;while(ma>Math.PI)ma-=Math.PI*2;while(ma<-Math.PI)ma+=Math.PI*2;if(Math.abs(ma)<0.8&&md<12){let sx=W/2+ma/(FOV/2)*(W/2);let size=Math.max(30,220/md);ctx.font=size+'px serif';ctx.textAlign='center';ctx.fillText('👹',sx,H/2);ctx.font='bold '+Math.max(12,size/4)+'px sans-serif';ctx.fillStyle='#ff2d55';ctx.fillText('HUMAHABOL!',sx,H/2+size/2)}
+// distance danger
+if(md<2.5&&!dead){dead=true;document.getElementById('scare').style.display='flex';beep(150,.6);setTimeout(()=>{document.getElementById('scare').style.display='none';document.getElementById('over').style.display='flex';document.getElementById('overText').textContent='Naabutan ka! Score: '+Math.floor(score)+' | Orbs: '+orbsGot+'/4'},900)}
+document.getElementById('score').firstChild.textContent=Math.floor(score);
+document.getElementById('staminaFill').style.width=stamina+'%';
 }
-
-// Custom character pictures
-FILES.forEach((f,i) => {
-  const preview = document.getElementById("prev"+i);
-  const input = document.getElementById("file"+i);
-
-  preview.src = f.img;
-
-  input.addEventListener("change", e => {
-    const file = e.target.files[0];
-
-    if (!file) return;
-
-    const url = URL.createObjectURL(file);
-    const newImg = new Image();
-
-    newImg.onload = () => {
-      loadedImgs[f.name] = newImg;
-      preview.src = url;
-      buildWheel();
-    };
-
-    newImg.src = url;
-  });
-});
-
-// ========================================
-// CHARACTER WHEEL
-// ========================================
-
-function buildWheel() {
-  const wheel = document.getElementById("wheel");
-
-  wheel.innerHTML = "";
-
-  const positions = [
-    {
-      top:"5px",
-      left:"50%",
-      transform:"translateX(-50%)"
-    },
-    {
-      top:"50%",
-      right:"5px",
-      transform:"translateY(-50%)"
-    },
-    {
-      bottom:"5px",
-      left:"50%",
-      transform:"translateX(-50%)"
-    },
-    {
-      top:"50%",
-      left:"5px",
-      transform:"translateY(-50%)"
-    }
-  ];
-
-  FILES.forEach((f,i) => {
-    const img = document.createElement("img");
-
-    img.src = loadedImgs[f.name]?.src || f.img;
-
-    Object.assign(img.style,positions[i]);
-
-    img.style.borderColor = f.color;
-
-    wheel.appendChild(img);
-  });
+function update(){
+if(!started||dead)return;
+let speed=running&&stamina>0?0.09:0.045;if(running&&stamina>0)stamina-=0.4;else if(stamina<100)stamina+=0.15;
+let nx=px+ (Math.cos(ang)* -jy + Math.cos(ang+Math.PI/2)*jx)*speed*2;
+let ny=py+ (Math.sin(ang)* -jy + Math.sin(ang+Math.PI/2)*jx)*speed*2;
+if(!map[Math.floor(ny)]||map[Math.floor(ny)][Math.floor(nx)]!==1){px=nx;py=ny;score+=speed*10}
+ // monster AI
+let mdx=px-mx,mdy=py-my;let ml=Math.hypot(mdx,mdy);let ms=orbsGot>=2?0.035:0.028;mx+=mdx/ml*ms;my+=mdy/ml*ms;
+if(map[Math.floor(my)][Math.floor(mx)]===1){mx-=mdx/ml*ms*2;my-=mdy/ml*ms*2}
 }
-
-// ========================================
-// WORLD GENERATION
-// ========================================
-
-function generateWorld() {
-  walls = [];
-  trees = [];
-
-  const shades = [
-    "#FF2D55",
-    "#00E5FF",
-    "#FFD60A",
-    "#7D4DFF",
-    "#00FF88",
-    "#FF6B00"
-  ];
-
-  for (let x=-800;x<=800;x+=200) {
-    for (let y=-800;y<=800;y+=200) {
-
-      if (Math.abs(x)<150 && Math.abs(y)<150) continue;
-
-      if (Math.abs(x)<150 && Math.abs(y+420)<200) continue;
-
-      walls.push({
-        x:x,
-        y:y,
-        w:100+Math.random()*40,
-        h:100+Math.random()*40,
-        height:60+Math.random()*120,
-        color:shades[Math.floor(Math.random()*shades.length)]
-      });
-    }
-  }
-
-  for (let i=0;i<80;i++) {
-    trees.push({
-      x:(Math.random()-.5)*1600,
-      y:(Math.random()-.5)*1600,
-      height:5+Math.random()*5
-    });
-  }
-}
-
-// ========================================
-// CAMERA PROJECTION
-// ========================================
-
-function project(x,y,z) {
-  const dx = x-player.x;
-  const dy = y-player.y;
-
-  const rx =
-    dx*Math.cos(-yaw) -
-    dy*Math.sin(-yaw);
-
-  const ry =
-    dx*Math.sin(-yaw) +
-    dy*Math.cos(-yaw);
-
-  const cz = 300/Math.max(1,ry);
-
-  return {
-    x:W/2+rx*cz,
-    y:H/2-(z-player.z+pitch*60)*cz*.6,
-    depth:ry,
-    scale:cz/300
-  };
-}
-
-// ========================================
-// COLLISION
-// ========================================
-
-function collide(p,r=16) {
-
-  for (const w of walls) {
-
-    if (
-      p.x+r>w.x-w.w/2 &&
-      p.x-r<w.x+w.w/2 &&
-      p.y+r>w.y-w.h/2 &&
-      p.y-r<w.y+w.h/2
-    ) {
-      const dx = p.x-w.x;
-      const dy = p.y-w.y;
-
-      if (Math.abs(dx)>Math.abs(dy)) {
-        p.x = w.x+Math.sign(dx)*(w.w/2+r);
-      } else {
-        p.y = w.y+Math.sign(dy)*(w.h/2+r);
-      }
-    }
-  }
-
-  const mb = mainBuilding;
-
-  if (
-    p.x+r>mb.x-mb.w/2 &&
-    p.x-r<mb.x+mb.w/2 &&
-    p.y+r>mb.y-mb.h/2 &&
-    p.y-r<mb.y+mb.h/2
-  ) {
-
-    const inDoor =
-      p.x>door.x &&
-      p.x<door.x+door.w &&
-      p.y>door.y-15 &&
-      p.y<door.y+35;
-
-    if (!inDoor) {
-      const dx = p.x-mb.x;
-      const dy = p.y-mb.y;
-
-      if (Math.abs(dx)>Math.abs(dy)) {
-        p.x = mb.x+Math.sign(dx)*(mb.w/2+r);
-      } else {
-        p.y = mb.y+Math.sign(dy)*(mb.h/2+r);
-      }
-
-      return "wall";
-    }
-
-    return "building";
-  }
-
-  for (const t of trees) {
-    const dx = p.x-t.x;
-    const dy = p.y-t.y;
-    const d = Math.hypot(dx,dy);
-
-    if (d<28 && d>0.1) {
-      p.x = t.x+dx/d*28;
-      p.y = t.y+dy/d*28;
-    }
-  }
-
-  p.x = Math.max(-900,Math.min(900,p.x));
-  p.y = Math.max(-900,Math.min(900,p.y));
-
-  return "open";
-}
-
-// ========================================
-// HUNTERS
-// ========================================
-
-function makeChaser(f,idx) {
-  const spawns = [
-    [0,800],
-    [800,0],
-    [-800,0],
-    [0,-800],
-    [600,600],
-    [-600,600]
-  ];
-
-  const sp = spawns[idx%spawns.length];
-
-  return {
-    data:f,
-    x:sp[0],
-    y:sp[1],
-    z:1.7,
-    speed:0,
-    tired:0,
-    stamina:100
-  };
-}
-
-// ========================================
-// AUDIO
-// ========================================
-
-function initAudio() {
-  try {
-    if (!audioContext) {
-      audioContext = new (
-        window.AudioContext ||
-        window.webkitAudioContext
-      )();
-    }
-
-    if (audioContext.state==="suspended") {
-      audioContext.resume();
-    }
-  } catch(e) {}
-}
-
-function playSound(audio) {
-  if (!audio || !audio.src) return;
-
-  audio.currentTime = 0;
-  audio.volume = 0.4;
-
-  audio.play().catch(()=>{});
-}
-
-function startMusic() {
-  bgMusic.volume = 0.25;
-  bgMusic.play().catch(()=>{});
-}
-
-function playScareSound() {
-  if (!audioContext) return;
-
-  try {
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-
-    osc.type = "sawtooth";
-
-    osc.frequency.setValueAtTime(
-      750,
-      audioContext.currentTime
-    );
-
-    osc.frequency.exponentialRampToValueAtTime(
-      65,
-      audioContext.currentTime+.55
-    );
-
-    gain.gain.setValueAtTime(
-      .25,
-      audioContext.currentTime
-    );
-
-    gain.gain.exponentialRampToValueAtTime(
-      .001,
-      audioContext.currentTime+.65
-    );
-
-    osc.connect(gain);
-    gain.connect(audioContext.destination);
-
-    osc.start();
-    osc.stop(audioContext.currentTime+.65);
-
-  } catch(e) {}
-}
-
-// ========================================
-// CAMERA MODE
-// ========================================
-
-function toggleCamera() {
-  cameraMode = cameraMode==="3rd" ? "1st" : "3rd";
-
-  document.getElementById("cameraMode").textContent =
-    cameraMode==="3rd"
-      ? "CAMERA: 3RD PERSON"
-      : "CAMERA: 1ST PERSON";
-}
-
-document.getElementById("cameraBtn").addEventListener(
-  "click",
-  toggleCamera
-);
-
-// ========================================
-// DRAWING HELPERS
-// ========================================
-
-function drawSky() {
-  const grad = ctx.createLinearGradient(0,0,0,H);
-
-  grad.addColorStop(0,"#080018");
-  grad.addColorStop(.30,"#24105a");
-  grad.addColorStop(.55,"#6b176d");
-  grad.addColorStop(.75,"#e43b69");
-  grad.addColorStop(1,"#190d37");
-
-  ctx.fillStyle = grad;
-  ctx.fillRect(0,0,W,H);
-
-  // Stars
-  for (let i=0;i<65;i++) {
-    const x=(i*173)%W;
-    const y=(i*83)%(H*.48);
-
-    ctx.globalAlpha=.35+Math.sin(elapsed*.002+i)*.25;
-
-    ctx.fillStyle=i%2 ? "#00d9ff" : "#ff39c9";
-
-    ctx.fillRect(x,y,2,2);
-  }
-
-  ctx.globalAlpha=1;
-
-  // Horizon glow
-  const glow = ctx.createRadialGradient(
-    W/2,H*.53,10,
-    W/2,H*.53,W*.65
-  );
-
-  glow.addColorStop(0,"rgba(255,0,180,.20)");
-  glow.addColorStop(1,"rgba(0,0,0,0)");
-
-  ctx.fillStyle=glow;
-  ctx.fillRect(0,0,W,H);
-}
-
-function drawGround() {
-  const ground = ctx.createLinearGradient(
-    0,H*.45,
-    0,H
-  );
-
-  ground.addColorStop(0,"#1b0b39");
-  ground.addColorStop(1,"#050713");
-
-  ctx.fillStyle=ground;
-  ctx.fillRect(0,H*.45,W,H*.55);
-
-  ctx.strokeStyle="rgba(0,229,255,.22)";
-  ctx.lineWidth=1;
-
-  // Perspective grid
-  for (let i=-800;i<=800;i+=100) {
-    const p1=project(i,-800,0);
-    const p2=project(i,800,0);
-
-    if (p1.depth>0 && p2.depth>0) {
-      ctx.beginPath();
-      ctx.moveTo(p1.x,p1.y);
-      ctx.lineTo(p2.x,p2.y);
-      ctx.stroke();
-    }
-
-    const p3=project(-800,i,0);
-    const p4=project(800,i,0);
-
-    if (p3.depth>0 && p4.depth>0) {
-      ctx.beginPath();
-      ctx.moveTo(p3.x,p3.y);
-      ctx.lineTo(p4.x,p4.y);
-      ctx.stroke();
-    }
-  }
-}
-
-function drawBuilding(w) {
-  const base=project(w.x,w.y,0);
-
-  if (base.depth<=0) return;
-
-  const top=project(w.x,w.y,w.height);
-
-  const w2=w.w/2*base.scale;
-  const h=base.y-top.y;
-
-  if (w2<.5 || h<.5) return;
-
-  ctx.fillStyle=w.color;
-  ctx.globalAlpha=.88;
-  ctx.fillRect(base.x-w2,base.y-h,w2*2,h);
-  ctx.globalAlpha=1;
-
-  ctx.strokeStyle="rgba(255,255,255,.65)";
-  ctx.lineWidth=Math.max(1,2*base.scale);
-
-  ctx.strokeRect(
-    base.x-w2,
-    base.y-h,
-    w2*2,
-    h
-  );
-
-  // Windows
-  const rows=4;
-  const cols=3;
-
-  for (let r=0;r<rows;r++) {
-    for (let c=0;c<cols;c++) {
-
-      const wx=base.x-w2+w2*.2+c*w2*.55;
-      const wy=base.y-h+h*.16+r*h*.19;
-
-      ctx.fillStyle=(r+c)%2 ? "#00eaff" : "#ffe16b";
-      ctx.globalAlpha=.85;
-
-      ctx.fillRect(
-        wx,
-        wy,
-        Math.max(1,w2*.2),
-        Math.max(1,h*.07)
-      );
-    }
-  }
-
-  ctx.globalAlpha=1;
-}
-
-function drawMainBuilding() {
-  const mb=mainBuilding;
-
-  const base=project(mb.x,mb.y,0);
-
-  if (base.depth<=0) return;
-
-  const top=project(mb.x,mb.y,170);
-
-  const w2=mb.w/2*base.scale;
-  const h=base.y-top.y;
-
-  // Main building body
-  const wallGrad=ctx.createLinearGradient(
-    base.x-w2,top.y,
-    base.x+w2,base.y
-  );
-
-  wallGrad.addColorStop(0,"#123d80");
-  wallGrad.addColorStop(.5,"#16234e");
-  wallGrad.addColorStop(1,"#07152f");
-
-  ctx.fillStyle=wallGrad;
-  ctx.fillRect(base.x-w2,base.y-h,w2*2,h);
-
-  ctx.strokeStyle="#00ccff";
-  ctx.lineWidth=3;
-  ctx.shadowBlur=18;
-  ctx.shadowColor="#00ccff";
-
-  ctx.strokeRect(base.x-w2,base.y-h,w2*2,h);
-
-  ctx.shadowBlur=0;
-
-  // Building windows
-  for (let r=0;r<5;r++) {
-    for (let c=
-  
- 
-
- 
-
- 
+function loop(){update();draw();requestAnimationFrame(loop)}loop();
+if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{})}
+</script>
+</body>
+</html>
