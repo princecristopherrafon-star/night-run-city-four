@@ -1,116 +1,708 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NIGHT RUN - CITY FOUR</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{background:#0a0020;overflow:hidden;font-family:Arial,sans-serif;color:#fff;touch-action:none}
-#gameCanvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;filter:saturate(1.7) contrast(1.25) brightness(1.15)}
-#hud{position:fixed;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;z-index:10;pointer-events:none}
-.hudBox{background:rgba(0,0,0,.65);border:2px solid #00ccff;padding:8px 12px;border-radius:12px;font-weight:bold;font-size:13px;box-shadow:0 0 15px #00ccff}
-#staminaBar{width:140px;height:12px;background:#333;border-radius:6px;overflow:hidden;margin-top:4px}
-#staminaFill{height:100%;width:100%;background:linear-gradient(90deg,#00ff88,#ffff00);transition:width .2s}
-#joystick{position:fixed;left:20px;bottom:30px;width:135px;height:135px;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.5);border-radius:50%;z-index:20;box-shadow:0 0 20px rgba(0,204,255,.6)}
-#joyKnob{position:absolute;left:50%;top:50%;width:58px;height:58px;background:#fff;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 15px #fff}
-#btns{position:fixed;right:20px;bottom:30px;display:flex;gap:12px;z-index:20}
-.btn{width:78px;height:78px;border-radius:50%;border:2px solid #fff;font-weight:900;font-size:13px;color:#fff}
-#jumpBtn{background:#ff8800;box-shadow:0 0 15px #ff8800}
-#sprintBtn{background:#ff0044;box-shadow:0 0 15px #ff0044}
-#menu{position:fixed;inset:0;background:rgba(5,0,30,.95);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:20px}
-#menu h1{font-size:44px;letter-spacing:3px;color:#00ccff;text-shadow:0 0 25px #00ccff}
-#startBtn{padding:16px 42px;font-size:20px;font-weight:900;background:#00ff88;border:none;border-radius:12px;box-shadow:0 0 20px #00ff88}
-#wheel{position:relative;width:180px;height:180px;border:3px solid #00ccff;border-radius:50%;margin:10px auto}
-#wheel img{position:absolute;width:62px;height:62px;border-radius:50%;border:3px solid #fff;object-fit:cover}
-#jumpScare{position:fixed;inset:0;z-index:9999;display:none;background:#000;justify-content:center;align-items:center}
-#jumpScare img{width:100%;height:100%;object-fit:cover;filter:contrast(1.8) brightness(1.4) saturate(2)}
-#jumpScare h2{position:absolute;font-size:90px;color:red;text-shadow:0 0 30px red}
-@keyframes shake{0%{transform:translate(0)}25%{transform:translate(-12px,12px)}50%{transform:translate(12px,-12px)}75%{transform:translate(-12px,-12px)}100%{transform:translate(0)}}
-</style>
-</head>
-<body>
-<canvas id="gameCanvas"></canvas>
-<div id="hud">
-<div class="hudBox">THREAT: <span id="threat">--</span>m<br>CITY SECTOR 01<br>TIME: <span id="timer">90</span>s<br><span id="cameraMode">CAMERA: 3RD PERSON</span></div>
-<div class="hudBox">STAMINA<div id="staminaBar"><div id="staminaFill"></div></div><div id="speedInfo">SPEED: 0</div></div>
-</div>
-<div id="joystick"><div id="joyKnob"></div></div>
-<div id="btns"><button class="btn" id="jumpBtn">JUMP</button><button class="btn" id="sprintBtn">SPRINT</button></div>
-<div id="jumpScare"><img src="63.jpg"><h2>BOO!</h2></div>
-<div id="menu">
-<h1>NIGHT RUN</h1><p>CITY FOUR - VIBRANT HARDCORE</p>
-<p style="color:#ffcc00">⚠ Mas Mabilis! May Jump Scare! Vibrant City!</p>
-<div id="wheel"></div>
-<div style="display:flex;gap:8px">
-<input type="file" id="file0" accept="image/*" style="display:none"><input type="file" id="file1" accept="image/*" style="display:none"><input type="file" id="file2" accept="image/*" style="display:none"><input type="file" id="file3" accept="image/*" style="display:none">
-<img id="prev0" style="width:58px;height:58px;border-radius:50%;object-fit:cover" onclick="document.getElementById('file0').click()">
-<img id="prev1" style="width:58px;height:58px;border-radius:50%;object-fit:cover" onclick="document.getElementById('file1').click()">
-<img id="prev2" style="width:58px;height:58px;border-radius:50%;object-fit:cover" onclick="document.getElementById('file2').click()">
-<img id="prev3" style="width:58px;height:58px;border-radius:50%;object-fit:cover" onclick="document.getElementById('file3').click()">
-</div>
-<button id="startBtn">▶ START RUN</button>
-<p style="font-size:12px;opacity:.7">Joystick = Takbo • JUMP = Talon • SPRINT = Hold<br>Takbo papunta sa blue building!</p>
-</div>
-<audio id="bgMusic" loop></audio><audio id="speedSound"></audio><audio id="heheSound"></audio><audio id="busingSound"></audio>
-<script>
-// ===== ORIGINAL CODE MO - HINDI SIRA, DAGDAG LANG SA BABA =====
-const FILES = [ {name:"BOSENG", img:"boseng.jpg", speed:2.0, color:"#ff4444", desc:"Tough and consistent. Does not tire easily.", maxSpeed:2.2, fatigueRate:0.6}, {name:"MICHAEL", img:"Michael.jpg", speed:2.5, color:"#44ff44", desc:"Balanced. Good speed and stamina.", maxSpeed:2.7, fatigueRate:1.0}, {name:"SPEED", img:"speed.jpg", speed:3.0, color:"#4488ff", desc:"Quick start but tires faster than most.", maxSpeed:3.2, fatigueRate:1.5}, {name:"63", img:"63.jpg", speed:3.6, color:"#ffff00", desc:"Fastest runner but needs frequent rest.", maxSpeed:4.0, fatigueRate:2.5} ];
-// DAGDAG LANG - PABILIS X1.9
-FILES.forEach(f=>{ f.speed=f.speed*1.9; f.maxSpeed=f.maxSpeed*1.9; });
-let loadedImgs = {}; let canvas = document.getElementById('gameCanvas'); let ctx = canvas.getContext('2d'); canvas.width = innerWidth; canvas.height = innerHeight; let isPlaying = false, timeLeft = 90, stamina = 100, isSprinting = false; let cameraMode = '3rd'; let yaw = 0, pitch = 0.35; let playerVelY = 0, onGround = true; let player = {x:0, y:0, z:1.7}; let chasers = [], keys = {}, joyX = 0, joyY = 0; let walls = [], trees = []; let mainBuilding = {x:0, y:-420, w:260, h:260}; let door = {x:-35, y:-300, w:70, h:25}; let platforms = [ {x:0,y:-340,w:65,h:65,z:3.5},{x:55,y:-370,w:55,h:55,z:5.5},{x:-55,y:-400,w:55,h:55,z:7.5}, {x:0,y:-430,w:65,h:65,z:9.5},{x:0,y:-460,w:55,h:55,z:11.5} ]; const bgMusic = document.getElementById('bgMusic'); const speedSound = document.getElementById('speedSound'); const heheSound = document.getElementById('heheSound'); const busingSound = document.getElementById('busingSound');
-function preloadImages(callback) { let count = 0; FILES.forEach(f => { const img = new Image(); img.src = f.img; img.onload = img.onerror = () => { count++; if (count >= FILES.length) { buildWheel(); callback && callback(); } }; loadedImgs[f.name] = img; }); }
-FILES.forEach((f, i) => { const preview = document.getElementById('prev' + i); if(preview) preview.src = f.img; const inp=document.getElementById('file' + i); if(!inp) return; inp.addEventListener('change', e => { const file = e.target.files[0]; if (!file) return; const url = URL.createObjectURL(file); const newImg = new Image(); newImg.onload = () => { loadedImgs[f.name] = newImg; preview.src = url; buildWheel(); alert(f.name + " - Picture updated"); }; newImg.src = url; }); });
-function generateWorld() { walls = []; trees = []; for (let x = -800; x <= 800; x += 200) { for (let y = -800; y <= 800; y += 200) { if (Math.abs(x) < 150 && Math.abs(y) < 150) continue; if (Math.abs(x) < 150 && Math.abs(y + 420) < 200) continue; const shades = ['#FF2D55','#00E5FF','#FFD60A','#7D4DFF','#00FF88','#FF6B00']; walls.push({ x:x, y:y, w:100+Math.random()*40, h:100+Math.random()*40, height:60+Math.random()*120, color:shades[Math.floor(Math.random()*shades.length)] }); } } for (let i = 0; i < 80; i++) { trees.push({x:(Math.random()-.5)*1600, y:(Math.random()-.5)*1600, height:5+Math.random()*5}); } }
-function project(x, y, z) { let dx = x - player.x; let dy = y - player.y; let rx = dx * Math.cos(-yaw) - dy * Math.sin(-yaw); let ry = dx * Math.sin(-yaw) + dy * Math.cos(-yaw); let cz = 300 / Math.max(1, ry); return { x: canvas.width/2 + rx * cz, y: canvas.height/2 - (z - player.z + pitch*60) * cz * 0.6, depth: ry, scale: cz/300 }; }
-function collide(p, r = 16) { for (let w of walls) { if (p.x+r > w.x-w.w/2 && p.x-r < w.x+w.w/2 && p.y+r > w.y-w.h/2 && p.y-r < w.y+w.h/2) { const dx = p.x - w.x, dy = p.y - w.y; if (Math.abs(dx) > Math.abs(dy)) p.x = w.x + Math.sign(dx) * (w.w/2 + r); else p.y = w.y + Math.sign(dy) * (w.h/2 + r); } } const mb = mainBuilding; if (p.x+r > mb.x-mb.w/2 && p.x-r < mb.x+mb.w/2 && p.y+r > mb.y-mb.h/2 && p.y-r < mb.y+mb.h/2) { const inDoor = p.x > door.x && p.x < door.x+door.w && p.y > door.y-15 && p.y < door.y+35; if (!inDoor) { const dx = p.x - mb.x, dy = p.y - mb.y; if (Math.abs(dx) > Math.abs(dy)) p.x = mb.x + Math.sign(dx) * (mb.w/2 + r); else p.y = mb.y + Math.sign(dy) * (mb.h/2 + r); return 'wall'; } return 'building'; } for (let t of trees) { const dx = p.x - t.x, dy = p.y - t.y, d = Math.hypot(dx, dy); if (d < 28 && d > 0.1) { p.x = t.x + dx/d * 28; p.y = t.y + dy/d * 28; } } p.x = Math.max(-900, Math.min(900, p.x)); p.y = Math.max(-900, Math.min(900, p.y)); return 'open'; }
-function makeChaser(f, idx) { const spawns = [[0,800],[800,0],[-800,0],[0,-800],[600,600],[-600,600]]; const sp = spawns[idx % spawns.length]; return {data:f, x:sp[0], y:sp[1], z:1.7, speed:0, tired:0, stamina:100}; }
-function playSound(audio) { if (!audio) return; audio.currentTime = 0; audio.volume = 0.4; audio.play().catch(() => {}); }
-function startMusic() { bgMusic.volume = 0.25; bgMusic.play().catch(() => {}); }
-function toggleCamera() { cameraMode = cameraMode === '3rd' ? '2nd' : '3rd'; document.getElementById('cameraMode').textContent = cameraMode === '3rd' ? 'CAMERA: 3RD PERSON' : 'CAMERA: 1ST PERSON'; }
-function buildWheel() { const wheel = document.getElementById('wheel'); if(!wheel) return; wheel.innerHTML = ''; const positions = [ {top:'8px',left:'50%',transform:'translateX(-50%)'}, {top:'50%',right:'8px',transform:'translateY(-50%)'}, {bottom:'8px',left:'50%',transform:'translateX(-50%)'}, {top:'50%',left:'8px',transform:'translateY(-50%)'} ]; FILES.forEach((f, i) => { const img = document.createElement('img'); img.src = loadedImgs[f.name]?.src || f.img; Object.assign(img.style, positions[i]); img.style.borderColor = f.color; wheel.appendChild(img); }); }
-function drawSky() { const grad = ctx.createLinearGradient(0,0,0,canvas.height); grad.addColorStop(0,'#0a0020'); grad.addColorStop(0.3,'#4B0082'); grad.addColorStop(0.55,'#FF2D55'); grad.addColorStop(0.75,'#FFD60A'); grad.addColorStop(1,'#00E5FF'); ctx.fillStyle = grad; ctx.fillRect(0,0,canvas.width,canvas.height); }
-function drawGround() { ctx.fillStyle = '#1a0a2e'; ctx.fillRect(0, canvas.height*0.52, canvas.width, canvas.height*0.5); ctx.strokeStyle = 'rgba(0,229,255,0.25)'; ctx.lineWidth = 2; for (let i = -800; i <= 800; i += 100) { const p1 = project(i, -800, 0); const p2 = project(i, 800, 0); if (p1.depth > 0 && p2.depth > 0) { ctx.beginPath(); ctx.moveTo(p1.x, Math.max(0, p1.y)); ctx.lineTo(p2.x, Math.max(0, p2.y)); ctx.stroke(); } const p3 = project(-800, i, 0); const p4 = project(800, i, 0); if (p3.depth > 0 && p4.depth > 0) { ctx.beginPath(); ctx.moveTo(p3.x, Math.max(0, p3.y)); ctx.lineTo(p4.x, Math.max(0, p4.y)); ctx.stroke(); } } }
-function drawBuilding(w) { const base = project(w.x, w.y, 0); if (base.depth <= 0) return; const top = project(w.x, w.y, w.height); const w2 = w.w/2 * base.scale; const h = base.y - top.y; ctx.fillStyle = w.color; ctx.fillRect(base.x - w2, base.y - h, w2*2, h); ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 2; ctx.strokeRect(base.x - w2, base.y - h, w2*2, h); }
-function drawMainBuilding() { const mb = mainBuilding; const base = project(mb.x, mb.y, 0); if (base.depth <= 0) return; const top = project(mb.x, mb.y, 35); const w2 = mb.w/2 * base.scale; const h = base.y - top.y; ctx.fillStyle = '#1a2a4a'; ctx.fillRect(base.x - w2, base.y - h, w2*2, h); ctx.strokeStyle = '#00ccff'; ctx.lineWidth = 3; ctx.strokeRect(base.x - w2, base.y - h, w2*2, h); const dp = project(door.x+door.w/2, door.y, 0); if (dp.depth > 0) { ctx.fillStyle = '#00ff88'; ctx.fillRect(dp.x - 15*dp.scale, dp.y - 40*dp.scale, 30*dp.scale, 40*dp.scale); } }
-// ===== DAGDAG LANG - JUMP SCARE =====
-let lastScare=0, scareCount=0;
-function triggerJumpScare(){ let el=document.getElementById('jumpScare'); el.style.display='flex'; document.body.style.animation='shake 0.4s'; if(heheSound) playSound(heheSound); setTimeout(()=>{ el.style.display='none'; document.body.style.animation=''; },650); }
-function checkJumpScare(){ let now=Date.now(); if(now-lastScare<7000) return; for(let c of chasers){ let d=Math.hypot(c.x-player.x,c.y-player.y); if(d<160&&Math.random()<0.04){ lastScare=now; scareCount++; triggerJumpScare(); break; } } if(Math.random()<0.0012&&now-lastScare>12000){ lastScare=now; triggerJumpScare(); } }
-// ===== DAGDAG LANG - JOYSTICK (AYOS NA, HINDI BALIKTAD) =====
-let joy=document.getElementById('joystick'), knob=document.getElementById('joyKnob');
-function joyMove(e){ let r=joy.getBoundingClientRect(); let t=e.touches?e.touches[0]:e; let dx=(t.clientX-(r.left+r.width/2))/60; let dy=(t.clientY-(r.top+r.height/2))/60; let l=Math.hypot(dx,dy); if(l>1){dx/=l;dy/=l;} joyX=dx; joyY=dy; knob.style.left=(50+dx*35)+'%'; knob.style.top=(50+dy*35)+'%'; }
-joy.addEventListener('touchstart',e=>{ joyMove(e); e.preventDefault(); });
-joy.addEventListener('touchmove',e=>{ joyMove(e); e.preventDefault(); });
-joy.addEventListener('touchend',()=>{ joyX=0; joyY=0; knob.style.left='50%'; knob.style.top='50%'; });
-document.getElementById('jumpBtn').addEventListener('touchstart',e=>{ if(onGround){ playerVelY=9; onGround=false; } e.preventDefault(); });
-document.getElementById('sprintBtn').addEventListener('touchstart',e=>{ isSprinting=true; e.preventDefault(); });
-document.getElementById('sprintBtn').addEventListener('touchend',()=>isSprinting=false);
-document.getElementById('startBtn').addEventListener('click',()=>{ document.getElementById('menu').style.display='none'; isPlaying=true; generateWorld(); chasers=FILES.map((f,i)=>makeChaser(f,i)); preloadImages(()=>{}); loop(); setInterval(()=>{ if(!isPlaying) return; timeLeft--; document.getElementById('timer').textContent=timeLeft; if(timeLeft<=0){ alert('YOU SURVIVED! Jump Scares: '+scareCount); location.reload(); } },1000); });
-function loop(){ if(!isPlaying) return; requestAnimationFrame(loop);
-// PLAYER - MAS MABILIS + JOYSTICK FIX: -joyY ang forward, joyX ang right
-let baseSpeed=isSprinting?11.5:7.8;
-if(isSprinting){ stamina=Math.max(0,stamina-0.8); if(stamina<=0) isSprinting=false; } else stamina=Math.min(100,stamina+0.35);
-document.getElementById('staminaFill').style.width=stamina+'%';
-let moveX=(Math.sin(yaw)*-joyY + Math.cos(yaw)*joyX)*baseSpeed;
-let moveY=(Math.cos(yaw)*-joyY - Math.sin(yaw)*joyX)*baseSpeed;
-player.x+=moveX; player.y+=moveY;
-if(!onGround){ player.z+=playerVelY*0.3; playerVelY-=0.6; if(player.z<=1.7){ player.z=1.7; onGround=true; playerVelY=0; } }
-collide(player);
-let nearest=9999;
-for(let c of chasers){ let dx=player.x-c.x, dy=player.y-c.y, d=Math.hypot(dx,dy); nearest=Math.min(nearest,d); let cs=c.data.maxSpeed*1.15; if(d<220) cs*=1.35; if(d>1){ c.x+=dx/d*cs; c.y+=dy/d*cs; } collide(c); if(d<24){ alert('NAHULI KA! Jump Scares: '+scareCount); location.reload(); return; } }
-document.getElementById('threat').textContent=Math.floor(nearest);
-document.getElementById('speedInfo').textContent='SPEED: '+Math.floor(Math.hypot(moveX,moveY)*10);
-checkJumpScare();
-drawSky(); drawGround();
-for(let w of walls) drawBuilding(w);
-drawMainBuilding();
-for(let p of platforms){ let b=project(p.x,p.y,p.z); if(b.depth<=0) continue; ctx.fillStyle='#FFD60A'; ctx.fillRect(b.x-25*b.scale,b.y-5,50*b.scale,10); }
-for(let c of chasers){ let p=project(c.x,c.y,0); if(p.depth<=0) continue; let img=loadedImgs[c.data.name]; if(img&&img.complete&&img.naturalWidth>0){ ctx.drawImage(img,p.x-25*p.scale,p.y-70*p.scale,50*p.scale,50*p.scale); } else { ctx.fillStyle=c.data.color; ctx.beginPath(); ctx.arc(p.x,p.y-40*p.scale,22*p.scale,0,Math.PI*2); ctx.fill(); } ctx.fillStyle='#fff'; ctx.font='bold 14px Arial'; ctx.fillText(c.data.name,p.x-20,p.y-80*p.scale); }
-ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(canvas.width/2,canvas.height-90,18,0,Math.PI*2); ctx.fill();
+// ========================================
+// FULL-SCREEN JUMPSCARE
+// ========================================
+
+function showJumpScare(chaser){
+ if(gameEnded||scareLocked)return;
+
+ gameEnded=true;
+ scareLocked=true;
+ isPlaying=false;
+ scareCount++;
+
+ const overlay=document.getElementById("jumpScare");
+ const image=document.getElementById("scareImage");
+ const text=document.getElementById("scareText");
+ const sub=document.getElementById("scareSub");
+ const buttons=document.getElementById("scareButtons");
+
+ const hunter=chaser.data;
+ const hunterImage=loadedImgs[hunter.name];
+
+ // The actual hunter that caught the player
+ image.src=hunterImage?.src||hunter.img;
+ image.style.objectFit="cover";
+
+ text.textContent=""+hunter.name+" GOT YOU!";
+ sub.textContent="YOU WERE CAUGHT BY";
+
+ overlay.style.display="flex";
+ overlay.classList.remove("shaking");
+ void overlay.offsetWidth;
+ overlay.classList.add("shaking");
+
+ buttons.style.display="flex";
+ scareSound();
+
+ if(navigator.vibrate){
+  navigator.vibrate([250,100,250,100,500]);
+ }
 }
-preloadImages(()=>{});
+
+// ========================================
+// DRAWING HELPERS
+// ========================================
+
+function polygon(points,color,stroke=null){
+ ctx.beginPath();
+ ctx.moveTo(points[0].x,points[0].y);
+ for(let i=1;i<points.length;i++){
+  ctx.lineTo(points[i].x,points[i].y);
+ }
+ ctx.closePath();
+ ctx.fillStyle=color;
+ ctx.fill();
+
+ if(stroke){
+  ctx.strokeStyle=stroke;
+  ctx.lineWidth=2;
+  ctx.stroke();
+ }
+}
+
+function drawSky(){
+ const sky=ctx.createLinearGradient(0,0,0,H);
+ sky.addColorStop(0,"#07001b");
+ sky.addColorStop(.55,"#160044");
+ sky.addColorStop(1,"#330044");
+
+ ctx.fillStyle=sky;
+ ctx.fillRect(0,0,W,H);
+
+ // Neon stars
+ for(let i=0;i<55;i++){
+  const x=(i*173)%W;
+  const y=(i*83)%(H*.55);
+  ctx.fillStyle=i%2?"#00d9ff":"#ff39c9";
+  ctx.globalAlpha=.3+Math.sin(elapsed*.002+i)*.3;
+  ctx.fillRect(x,y,2,2);
+ }
+ ctx.globalAlpha=1;
+
+ // Horizon glow
+ const glow=ctx.createRadialGradient(W/2,H*.52,10,W/2,H*.52,W*.6);
+ glow.addColorStop(0,"rgba(255,0,180,.20)");
+ glow.addColorStop(1,"rgba(0,0,0,0)");
+ ctx.fillStyle=glow;
+ ctx.fillRect(0,0,W,H);
+}
+
+function drawGround(){
+ const ground=ctx.createLinearGradient(0,H*.45,0,H);
+ ground.addColorStop(0,"#170b35");
+ ground.addColorStop(1,"#050713");
+ ctx.fillStyle=ground;
+ ctx.fillRect(0,H*.45,W,H*.55);
+
+ // Road perspective grid
+ ctx.strokeStyle="rgba(0,220,255,.22)";
+ ctx.lineWidth=1;
+
+ for(let i=-12;i<=12;i++){
+  const p1=project(i*90,900,0);
+  const p2=project(i*90,-900,0);
+  ctx.beginPath();
+  ctx.moveTo(p1.x,p1.y);
+  ctx.lineTo(p2.x,p2.y);
+  ctx.stroke();
+ }
+
+ for(let i=0;i<18;i++){
+  const y=player.y+((i*100+elapsed*.15)%1800)-900;
+  const a=project(-900,y,0);
+  const b=project(900,y,0);
+  ctx.beginPath();
+  ctx.moveTo(a.x,a.y);
+  ctx.lineTo(b.x,b.y);
+  ctx.stroke();
+ }
+}
+
+function drawBuilding(b){
+ const bottom=project(b.x,b.y,0);
+ const top=project(b.x,b.y,b.height);
+ const left=project(b.x-b.w/2,b.y,0);
+ const right=project(b.x+b.w/2,b.y,0);
+
+ if(bottom.depth<0)return;
+
+ const width=Math.abs(right.x-left.x);
+ const height=Math.abs(bottom.y-top.y);
+
+ if(width<1||height<1)return;
+
+ const x=left.x;
+ const y=top.y;
+
+ ctx.fillStyle=b.color;
+ ctx.globalAlpha=.8;
+ ctx.fillRect(x,y,width,height);
+ ctx.globalAlpha=1;
+
+ ctx.strokeStyle="#00eaff";
+ ctx.lineWidth=Math.max(1,2*bottom.scale);
+ ctx.strokeRect(x,y,width,height);
+
+ // Glowing windows
+ const rows=5,cols=4;
+ for(let r=0;r<rows;r++){
+  for(let c=0;c<cols;c++){
+   const wx=x+width*(.12+c*.21);
+   const wy=y+height*(.1+r*.16);
+   const ww=Math.max(1,width*.09);
+   const wh=Math.max(1,height*.07);
+
+   ctx.fillStyle=(r+c)%2?"#00eaff":"#ffcc33";
+   ctx.globalAlpha=.8;
+   ctx.fillRect(wx,wy,ww,wh);
+  }
+ }
+ ctx.globalAlpha=1;
+}
+
+function drawTree(t){
+ const p=project(t.x,t.y,0);
+ if(p.depth<0||p.scale<.005)return;
+
+ const h=t.height*18*p.scale;
+ const w=9*p.scale;
+
+ ctx.fillStyle="#442016";
+ ctx.fillRect(p.x-w/3,p.y-h*.35,w*.66,h*.35);
+
+ ctx.shadowBlur=15*p.scale;
+ ctx.shadowColor="#00ff88";
+ ctx.fillStyle="#00b96b";
+ ctx.beginPath();
+ ctx.arc(p.x,p.y-h*.55,w*1.7,0,Math.PI*2);
+ ctx.fill();
+
+ ctx.fillStyle="#00ffb7";
+ ctx.beginPath();
+ ctx.arc(p.x-w*.6,p.y-h*.7,w,0,Math.PI*2);
+ ctx.fill();
+
+ ctx.shadowBlur=0;
+}
+
+function drawMainBuilding(){
+ const b=mainBuilding;
+ const corners=[
+  project(b.x-b.w/2,b.y-b.h/2,0),
+  project(b.x+b.w/2,b.y-b.h/2,0),
+  project(b.x+b.w/2,b.y+b.h/2,0),
+  project(b.x-b.w/2,b.y+b.h/2,0)
+ ];
+
+ const topCorners=[
+  project(b.x-b.w/2,b.y-b.h/2,170),
+  project(b.x+b.w/2,b.y-b.h/2,170),
+  project(b.x+b.w/2,b.y+b.h/2,170),
+  project(b.x-b.w/2,b.y+b.h/2,170)
+ ];
+
+ if(corners[0].depth<0)return;
+
+ polygon([topCorners[0],topCorners[1],corners[1],corners[0]],"#132c70","#00eaff");
+ polygon([topCorners[1],topCorners[2],corners[2],corners[1]],"#091a50","#00aaff");
+ polygon([topCorners[0],topCorners[3],corners[3],corners[0]],"#14265f","#00aaff");
+ polygon(topCorners,"#164c9b","#00eaff");
+
+ // Door
+ const d1=project(door.x,door.y,0);
+ const d2=project(door.x+door.w,door.y,0);
+ const d3=project(door.x+door.w,door.y,75);
+ const d4=project(door.x,door.y,75);
+
+ polygon([d1,d2,d3,d4],"#050817","#00ffff");
+
+ ctx.fillStyle="#fff";
+ ctx.font="bold 12px Arial";
+ ctx.textAlign="center";
+ const label=project(b.x,b.y,190);
+ ctx.shadowBlur=15;
+ ctx.shadowColor="#00eaff";
+ ctx.fillText("CITY FOUR",label.x,label.y);
+ ctx.shadowBlur=0;
+}
+
+function drawPlatforms(){
+ for(const p of platforms){
+  const a=project(p.x-p.w/2,p.y-p.h/2,p.z);
+  const b=project(p.x+p.w/2,p.y-p.h/2,p.z);
+  const c=project(p.x+p.w/2,p.y+p.h/2,p.z);
+  const d=project(p.x-p.w/2,p.y+p.h/2,p.z);
+
+  if(a.depth<0)continue;
+
+  polygon([a,b,c,d],"rgba(0,220,255,.38)","#00ffff");
+
+  ctx.shadowBlur=15;
+  ctx.shadowColor="#00ccff";
+  ctx.strokeStyle="#00ffff";
+  ctx.strokeRect(a.x,a.y,b.x-a.x,d.y-a.y);
+  ctx.shadowBlur=0;
+ }
+}
+
+function drawCharacter(chaser){
+ const p=project(chaser.x,chaser.y,chaser.z);
+ if(p.depth<0||p.scale<.003)return;
+
+ const img=loadedImgs[chaser.data.name];
+ const size=Math.max(12,65*p.scale);
+
+ ctx.save();
+ ctx.translate(p.x,p.y);
+
+ // Shadow
+ ctx.fillStyle="rgba(0,0,0,.45)";
+ ctx.beginPath();
+ ctx.ellipse(0,4,size*.4,size*.12,0,0,Math.PI*2);
+ ctx.fill();
+
+ if(img&&img.complete&&img.naturalWidth>0){
+  ctx.shadowBlur=20;
+  ctx.shadowColor=chaser.data.color;
+  ctx.drawImage(img,-size/2,-size,size,size);
+ }else{
+  ctx.fillStyle=chaser.data.color;
+  ctx.shadowBlur=20;
+  ctx.shadowColor=chaser.data.color;
+  ctx.fillRect(-size/2,-size,size,size);
+ }
+
+ ctx.shadowBlur=0;
+ ctx.strokeStyle=chaser.data.color;
+ ctx.lineWidth=2;
+ ctx.strokeRect(-size/2,-size,size,size);
+
+ ctx.fillStyle="#fff";
+ ctx.font="bold "+Math.max(9,12*p.scale)+"px Arial";
+ ctx.textAlign="center";
+ ctx.fillText(chaser.data.name,0,-size-7);
+
+ ctx.restore();
+}
+
+function drawPlayer(){
+ const x=W/2;
+ const y=H*.72;
+
+ ctx.save();
+
+ // Player shadow
+ ctx.fillStyle="rgba(0,0,0,.4)";
+ ctx.beginPath();
+ ctx.ellipse(x,y+5,20,7,0,0,Math.PI*2);
+ ctx.fill();
+
+ // Simple neon player silhouette
+ ctx.shadowBlur=20;
+ ctx.shadowColor="#00eaff";
+ ctx.fillStyle="#00bfff";
+
+ ctx.beginPath();
+ ctx.arc(x,y-45-player.z*2,12,0,Math.PI*2);
+ ctx.fill();
+
+ ctx.fillRect(x-9,y-33-player.z*2,18,35);
+
+ ctx.fillStyle="#fff";
+ ctx.fillRect(x-12,y-5-player.z*2,8,20);
+ ctx.fillRect(x+4,y-5-player.z*2,8,20);
+
+ ctx.restore();
+}
+
+function drawScene(){
+ drawSky();
+ drawGround();
+
+ const objects=[];
+
+ walls.forEach(w=>{
+  const p=project(w.x,w.y,0);
+  if(p.depth>0)objects.push({depth:p.depth,type:"building",item:w});
+ });
+
+ trees.forEach(t=>{
+  const p=project(t.x,t.y,0);
+  if(p.depth>0)objects.push({depth:p.depth,type:"tree",item:t});
+ });
+
+ chasers.forEach(c=>{
+  const p=project(c.x,c.y,0);
+  if(p.depth>0)objects.push({depth:p.depth,type:"chaser",item:c});
+ });
+
+ objects.sort((a,b)=>b.depth-a.depth);
+
+ for(const o of objects){
+  if(o.type==="building")drawBuilding(o.item);
+  if(o.type==="tree")drawTree(o.item);
+  if(o.type==="chaser")drawCharacter(o.item);
+ }
+
+ drawMainBuilding();
+ drawPlatforms();
+ drawPlayer();
+
+ // Screen vignette
+ const vignette=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*.2,W/2,H/2,Math.max(W,H)*.75);
+ vignette.addColorStop(0,"rgba(0,0,0,0)");
+ vignette.addColorStop(1,"rgba(0,0,0,.45)");
+ ctx.fillStyle=vignette;
+ ctx.fillRect(0,0,W,H);
+}
+
+// ========================================
+// JOYSTICK
+// ========================================
+
+const joy=document.getElementById("joystick");
+const knob=document.getElementById("joyKnob");
+let joyPointer=null;
+
+function joyMove(e){
+ const r=joy.getBoundingClientRect();
+
+ let dx=(e.clientX-(r.left+r.width/2))/(r.width*.34);
+ let dy=(e.clientY-(r.top+r.height/2))/(r.height*.34);
+
+ const len=Math.hypot(dx,dy);
+ if(len>1){
+  dx/=len;
+  dy/=len;
+ }
+
+ joyX=dx;
+ joyY=dy;
+
+ knob.style.left=(50+dx*34)+"%";
+ knob.style.top=(50+dy*34)+"%";
+}
+
+joy.addEventListener("pointerdown",e=>{
+ e.preventDefault();
+ joyPointer=e.pointerId;
+ joy.setPointerCapture(e.pointerId);
+ joyMove(e);
+});
+
+joy.addEventListener("pointermove",e=>{
+ if(e.pointerId===joyPointer)joyMove(e);
+});
+
+function resetJoy(){
+ joyPointer=null;
+ joyX=0;
+ joyY=0;
+ knob.style.left="50%";
+ knob.style.top="50%";
+}
+
+joy.addEventListener("pointerup",resetJoy);
+joy.addEventListener("pointercancel",resetJoy);
+
+// ========================================
+// JUMP AND SPRINT CONTROLS
+// ========================================
+
+const jumpBtn=document.getElementById("jumpBtn");
+const sprintBtn=document.getElementById("sprintBtn");
+
+function jump(){
+ if(!isPlaying||!onGround)return;
+ playerVelY=12;
+ onGround=false;
+
+ if(navigator.vibrate)navigator.vibrate(25);
+}
+
+jumpBtn.addEventListener("pointerdown",e=>{
+ e.preventDefault();
+ jump();
+});
+
+sprintBtn.addEventListener("pointerdown",e=>{
+ e.preventDefault();
+ isSprinting=true;
+});
+
+function stopSprint(){
+ isSprinting=false;
+}
+
+sprintBtn.addEventListener("pointerup",stopSprint);
+sprintBtn.addEventListener("pointercancel",stopSprint);
+sprintBtn.addEventListener("lostpointercapture",stopSprint);
+
+// Keyboard support
+addEventListener("keydown",e=>{
+ keys[e.key.toLowerCase()]=true;
+
+ if(e.code==="Space")jump();
+ if(e.key==="Shift")isSprinting=true;
+});
+
+addEventListener("keyup",e=>{
+ keys[e.key.toLowerCase()]=false;
+ if(e.key==="Shift")isSprinting=false;
+});
+
+// ========================================
+// CAMERA
+// ========================================
+
+function toggleCamera(){
+ cameraMode=cameraMode==="3rd"?"1st":"3rd";
+ document.getElementById("cameraMode").textContent=
+  "CAMERA: "+(cameraMode==="3rd"?"3RD PERSON":"1ST PERSON");
+}
+
+document.getElementById("cameraBtn").addEventListener("click",toggleCamera);
+
+// ========================================
+// GAME UPDATE
+// ========================================
+
+function update(dt){
+ if(!isPlaying||gameEnded)return;
+
+ const frame=dt/16.6667;
+ elapsed+=dt;
+
+ timerAccumulator+=dt;
+ if(timerAccumulator>=1000){
+  timerAccumulator-=1000;
+  timeLeft--;
+  document.getElementById("timer").textContent=timeLeft;
+
+  if(timeLeft<=0){
+   winGame();
+   return;
+  }
+ }
+
+ let forward=-joyY;
+ let sideways=joyX;
+
+ if(keys.w||keys.arrowup)forward=1;
+ if(keys.s||keys.arrowdown)forward=-1;
+ if(keys.a||keys.arrowleft)sideways=-1;
+ if(keys.d||keys.arrowright)sideways=1;
+
+ const moving=Math.abs(forward)+Math.abs(sideways)>.05;
+
+ let baseSpeed=isSprinting&&stamina>0?11.5:7.8;
+
+ if(isSprinting&&moving){
+  stamina=Math.max(0,stamina-.8*frame);
+  if(stamina<=0)isSprinting=false;
+ }else{
+  stamina=Math.min(100,stamina+.35*frame);
+ }
+
+ // Correct camera-relative movement
+ const moveX=(-Math.sin(yaw)*forward+Math.cos(yaw)*sideways)*baseSpeed*frame;
+ const moveY=( Math.cos(yaw)*forward+Math.sin(yaw)*sideways)*baseSpeed*frame;
+
+ const oldX=player.x;
+ const oldY=player.y;
+
+ player.x+=moveX;
+ player.y+=moveY;
+
+ collide(player,14);
+
+ // Keep movement from clipping through walls
+ if(Math.abs(player.x-oldX)>baseSpeed*frame*1.1)player.x=oldX;
+ if(Math.abs(player.y-oldY)>baseSpeed*frame*1.1)player.y=oldY;
+
+ // Jump physics
+ if(!onGround){
+  player.z+=playerVelY*frame*.12;
+  playerVelY-=.65*frame;
+
+  if(player.z<=1.7){
+   player.z=1.7;
+   playerVelY=0;
+   onGround=true;
+  }
+ }
+
+ // Hunters chase the player
+ let closest=Infinity;
+
+ for(const c of chasers){
+  const dx=player.x-c.x;
+  const dy=player.y-c.y;
+  const d=Math.hypot(dx,dy);
+
+  if(d<closest)closest=d;
+
+  let cs=c.data.maxSpeed*1.15;
+
+  if(d<220)cs*=1.35;
+  if(d<100)cs*=1.15;
+
+  c.x+=(dx/(d||1))*cs*frame;
+  c.y+=(dy/(d||1))*cs*frame;
+
+  collide(c,14);
+
+  // Catch detection
+  if(d<25&&player.z<3.5){
+   showJumpScare(c);
+   return;
+  }
+ }
+
+ document.getElementById("threat").textContent=
+  closest===Infinity?"--":Math.round(closest);
+
+ document.getElementById("staminaFill").style.width=stamina+"%";
+ document.getElementById("speedInfo").textContent=
+  "SPEED: "+(moving?Math.round(baseSpeed*10):0);
+
+ const danger=Math.max(0,1-closest/260);
+ document.getElementById("dangerVignette").style.opacity=danger*.65;
+
+ // Slight camera shake when hunters are close
+ if(closest<100){
+  canvas.style.transform=
+   "translate("+((Math.random()-.5)*danger*3)+"px,"+
+   ((Math.random()-.5)*danger*3)+"px)";
+ }else{
+  canvas.style.transform="none";
+ }
+}
+
+// ========================================
+// WIN / RESTART
+// ========================================
+
+function winGame(){
+ isPlaying=false;
+ gameEnded=true;
+ bgMusic.pause();
+
+ const overlay=document.getElementById("jumpScare");
+ overlay.style.display="flex";
+ overlay.classList.remove("shaking");
+
+ document.getElementById("scareImage").style.display="none";
+ document.getElementById("scareSub").textContent="YOU SURVIVED THE CITY";
+ document.getElementById("scareText").textContent="YOU WIN!";
+ document.getElementById("scareText").style.color="#00ff88";
+ document.getElementById("scareButtons").style.display="flex";
+
+ if(navigator.vibrate)navigator.vibrate([100,60,100]);
+}
+
+function resetGame(){
+ timeLeft=90;
+ stamina=100;
+ isSprinting=false;
+ player={x:0,y:0,z:1.7};
+ playerVelY=0;
+ onGround=true;
+ yaw=0;
+ pitch=.35;
+ elapsed=0;
+ timerAccumulator=0;
+ gameEnded=false;
+ scareLocked=false;
+
+ chasers=FILES.map((f,i)=>makeChaser(f,i));
+
+ document.getElementById("timer").textContent=timeLeft;
+ document.getElementById("threat").textContent="--";
+ document.getElementById("staminaFill").style.width="100%";
+ document.getElementById("dangerVignette").style.opacity=0;
+
+ document.getElementById("scareImage").style.display="block";
+ document.getElementById("scareText").style.color="red";
+ document.getElementById("scareButtons").style.display="none";
+ document.getElementById("jumpScare").style.display="none";
+
+ resetJoy();
+}
+
+document.getElementById("scareRestart").addEventListener("click",()=>{
+ document.getElementById("jumpScare").style.display="none";
+ document.getElementById("menu").style.display="flex";
+});
+
+// ========================================
+// MAIN GAME LOOP
+// ========================================
+
+function loop(timestamp){
+ if(!lastTime)lastTime=timestamp;
+
+ const dt=Math.min(timestamp-lastTime,40);
+ lastTime=timestamp;
+
+ if(isPlaying){
+  update(dt);
+  drawScene();
+ }
+
+ requestAnimationFrame(loop);
+}
+
+// ========================================
+// START GAME
+// ========================================
+
+async function startGame(){
+ initAudio();
+
+ // Try landscape lock where supported
+ try{
+  if(document.documentElement.requestFullscreen){
+   await document.documentElement.requestFullscreen();
+  }
+ }catch(e){}
+
+ try{
+  if(screen.orientation&&screen.orientation.lock){
+   await screen.orientation.lock("landscape");
+  }
+ }catch(e){
+  // If the browser does not allow locking,
+  // rotate the phone manually.
+ }
+
+ resizeCanvas();
+ resetGame();
+ generateWorld();
+
+ document.getElementById("menu").style.display="none";
+
+ isPlaying=true;
+ lastTime=0;
+
+ startMusic();
+}
+
+document.getElementById("startBtn").addEventListener("click",startGame);
+
+// ========================================
+// INITIALIZE
+// ========================================
+
+preloadImages(()=>{
+ buildWheel();
+});
+
+generateWorld();
+chasers=FILES.map((f,i)=>makeChaser(f,i));
+
+requestAnimationFrame(loop);
+
 </script>
 </body>
-</html>
-  
+ </html>
