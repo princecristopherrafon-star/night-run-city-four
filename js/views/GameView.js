@@ -29,16 +29,21 @@ export default class GameView {
       "./assets/speed.jpg"
     ];
 
-    this.config = {
-      height: 480,
-      walkSpeed: 5.2,
-      sprintSpeed: 8.5,
-      acceleration: 12,
-      friction: 9,
-      enemySpeed: 2.15,
-      enemyMinDistance: 2,
-      fogDistance: 75
-    };
+    
+this.config = {
+  height: 480,
+
+  walkSpeed: 7.5,
+  sprintSpeed: 13.5,
+
+  acceleration: 16,
+  friction: 11,
+
+  enemySpeed: 4.15,
+  enemyMinDistance: 2,
+  fogDistance: 180
+};
+    
   }
 
   init() {
