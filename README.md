@@ -1,48 +1,73 @@
-# 🌃 NIGHT RUN: CITY OF FOUR
+# 🌃 NIGHT RUN
 
-> Survive the hunt. Run through the dark city. Don't look back.
+> "Four subjects detected. Something is right behind you."
 
-A 3D Horror Runner game built with HTML, CSS, JavaScript & Three.js.
-Playable on mobile and desktop — installable as a PWA.
+A 3D first-person horror survival game built for mobile. 
+Run through a dark, foggy city at night — and don't let them catch you.
 
-![Game](https://img.shields.io/badge/Status-Active_Development-green)
-![Tech](https://img.shields.io/badge/Built_With-Three.js-black)
-![Platform](https://img.shields.io/badge/Platform-Web_%7C_PWA-blue)
+**Play it live here:** https://russellpakingan-debug.github.io/night-run/
 
-## 🎮 How to Play
+![Night Run Gameplay](https://via.placeholder.com/800x400?text=NIGHT+RUN)
 
-- **Mobile:** Use the on-screen joystick to run
-- **PC:** Use WASD / Arrow Keys to move
-- **Goal:** Survive as long as you can. Avoid the hunter.
+## 🎮 How To Play
+
+You are alone in the city. Four figures are chasing you.
+
+Survive as long as you can. Your best time is saved automatically.
+
+### Controls (Mobile)
+- **Left Joystick** - Move
+- **Drag on Screen** - Look Around
+- **SPRINT Button** - Run Faster (uses Stamina)
+- **JUMP Button** - Jump Over Obstacles
+
+### Controls (PC - Coming Soon)
+- WASD to Move, Mouse to Look
 
 ## ✨ Features
 
-- [x] 3D City Environment
-- [x] Horror Atmosphere
-- [x] Mobile Joystick Controls
-- [x] PWA - Installable on Phone
-- [ ] High Score System
-- [ ] Sound Effects
-- [ ] New Enemies
+- **3D First-Person Gameplay** - Built with Three.js
+- **4 Unique Enemies** - Each with their own portrait and sound, they get faster the closer they get
+- **Distance-Based Audio** - Enemy sounds get louder as they get closer
+- **Dynamic Horror Atmosphere** - Fog, neon lights, city skyline, and a low drone that intensifies with danger
+- **Stamina System** - Sprint wisely, or you'll get tired
+- **Obstacle System** - Jump over barriers to escape
+- **Save System** - Your best survival time is saved on your device
+- **Mobile Optimized** - Touch joystick, touch look, and performance-tuned for phones
 
 ## 🛠️ Tech Stack
 
-- **HTML5** - Structure
-- **CSS3** - Styling & UI
-- **JavaScript** - Game Logic
 - **Three.js** - 3D Rendering
-- **PWA** - Offline & Installable
+- **Vanilla JavaScript (ES Modules)** - No frameworks
+- **MVC Architecture**
+    - `models/` - Player, Enemy, Score, SaveDAO
+    - `views/` - GameView (City, Lights, Camera)
+    - `controllers/` - GameController (Game Loop, Audio, Input)
+- **HTML / CSS** - HUD & Mobile UI
+- **GitHub Pages** - Deployment
 
-## 🚀 Play Now
+## 📁 Project Structure
 
-**Live Demo:** https://princecristopherrafc.github.io/night-run-city-four/
+
+## 🚧 More Updates Coming Soon!
+
+This game is still in active development. More updates are on the way:
+
+- [ ] New Map / Levels
+- [ ] More Enemies
+- [ ] PC Keyboard + Mouse Controls
+- [ ] Power-ups & Hiding Mechanics
+- [ ] Difficulty Modes (Easy / Normal / Nightmare)
+- [ ] Leaderboard
+- [ ] Improved Graphics & Effects
+
+Stay tuned — the night is just getting started.
 
 ## 👨‍💻 Developer
 
-**Prince Studios**
-2nd Year BSIT Student | Aspiring Full-Stack & Game Developer
-
-> Daily updates. One commit per day until this becomes a full game.
+**Russell Pakingan**
+2nd Year College Student
+Built from scratch as a passion project.
 
 ---
-© 2026 Prince Studios
+Made with ☕ and a little bit of fear in Barotac Nuevo, Philippines.
