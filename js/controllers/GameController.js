@@ -1286,6 +1286,7 @@ export default class GameController {
   }
 
   
+  
   updateObstacles() {
     const playerFeet = this.player.y - 1.7;
 
@@ -1296,7 +1297,7 @@ export default class GameController {
       halfDepth,
       top = Infinity
     ) => {
-      // Allow jumping over low obstacles
+      // Allow the player to move above an obstacle.
       if (playerFeet >= top) return;
 
       const dx = this.player.x - x;
@@ -1305,7 +1306,9 @@ export default class GameController {
       if (
         Math.abs(dx) >= halfWidth ||
         Math.abs(dz) >= halfDepth
-      ) return;
+      ) {
+        return;
+      }
 
       const overlapX = halfWidth - Math.abs(dx);
       const overlapZ = halfDepth - Math.abs(dz);
@@ -1323,21 +1326,29 @@ export default class GameController {
       }
     };
 
-    // Obstacles
-    for (const obstacle of this.view.obstacles) {
+    // Arena obstacles.
+    for (const obstacle of this.view.obstacles || []) {
+      if (!obstacle || !obstacle.geometry) continue;
+
       const params = obstacle.geometry.parameters;
+
+      if (!params) continue;
+
+      const width = params.width * (obstacle.scale?.x || 1);
+      const depth = params.depth * (obstacle.scale?.z || 1);
+      const height = params.height * (obstacle.scale?.y || 1);
 
       resolveCollision(
         obstacle.position.x,
         obstacle.position.z,
-        params.width / 2 + 0.35,
-        params.depth / 2 + 0.35,
-        obstacle.position.y + params.height / 2
+        width / 2 + 0.35,
+        depth / 2 + 0.35,
+        obstacle.position.y + height / 2
       );
     }
 
-    // Solid buildings
-    for (const building of this.view.buildings) {
+    // Building wall colliders.
+    for (const building of this.view.buildings || []) {
       const data = building.userData;
 
       if (!data || !data.solid) continue;
@@ -1348,9 +1359,9 @@ export default class GameController {
         data.width / 2 + 0.35,
         data.depth / 2 + 0.35
       );
-     }
-  }
-
+    }
+        }
+  
 
   endGame() {
     if (this.gameOver) return;
