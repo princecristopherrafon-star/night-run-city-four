@@ -1234,12 +1234,14 @@ export default class GameController {
         }
       }
 
-      const distance = enemy.update(
+            const distance = enemy.update(
         this.player,
         dt,
         time,
         index,
-        this.view.config.enemySpeed
+        this.view.config.enemySpeed,
+        this.view.obstacles,
+        this.view.buildings
       );
 
       closest = Math.min(closest, distance);
