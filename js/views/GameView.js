@@ -655,30 +655,6 @@ group.userData = {
       }
           }
     
-    this.createEnterableBuilding(
-      "ROBLOX MART", -23, -12,
-      0x236a68, 0x43f4ce, "mart"
-    );
-
-    this.createEnterableBuilding(
-      "SCHOOL", 23, -12,
-      0x62512b, 0xffd84a, "school"
-    );
-
-    this.createEnterableBuilding(
-      "HOSPITAL", -23, 25,
-      0x52627e, 0xff4564, "hospital"
-    );
-
-    this.createEnterableBuilding(
-      "ARCADE", 23, 25,
-      0x43245f, 0xff4fd8, "arcade"
-    );
-
-    this.createEnterableBuilding(
-      "CITY CAFE", -58, 25,
-      0x76432d, 0xffa64a, "cafe"
-    );
 
 
   createCity() {
