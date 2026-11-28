@@ -66,11 +66,12 @@ export default class Player {
     }
 
     // CAMERA-RELATIVE MOVEMENT
-    const forwardX = Math.sin(this.yaw);
-    const forwardZ = -Math.cos(this.yaw);
+const forwardX = -Math.sin(this.yaw);
+const forwardZ = -Math.cos(this.yaw);
 
-    const rightX = Math.cos(this.yaw);
-    const rightZ = Math.sin(this.yaw);
+const rightX = Math.cos(this.yaw);
+const rightZ = -Math.sin(this.yaw);
+    
 
     let desiredX =
       forwardX * -joystick.y +
