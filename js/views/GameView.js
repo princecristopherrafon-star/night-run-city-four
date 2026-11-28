@@ -626,12 +626,23 @@ addWallCollider(8.5, d / 2, 7, t);
     }
 
     // OUTER ARENA BOUNDARIES
-    for (const x of [-75, 75]) {
-      this.addBox(
-        this.scene, x, 3, 0,
-        1.2, 6, 150,
-        this.mat(0x22284f)
-      );
+    
+for (const x of [-75, 75]) {
+  const wall = this.addBox(
+    this.scene, x, 3, 0,
+    1.2, 6, 150,
+    this.mat(0x22284f)
+  );
+
+  this.obstacles.push(wall);
+
+  this.addNeon(
+    this.scene, x, 6.1, 0,
+    1.5, 0.18, 150,
+    0x45eaff
+  );
+}
+    
 
       this.addNeon(
         this.scene, x, 6.1, 0,
@@ -640,13 +651,23 @@ addWallCollider(8.5, d / 2, 7, t);
       );
     }
 
-    for (const z of [-75, 75]) {
-      this.addBox(
-        this.scene, 0, 3, z,
-        150, 6, 1.2,
-        this.mat(0x22284f)
-      );
+    
+for (const z of [-75, 75]) {
+  const wall = this.addBox(
+    this.scene, 0, 3, z,
+    150, 6, 1.2,
+    this.mat(0x22284f)
+  );
 
+  this.obstacles.push(wall);
+
+  this.addNeon(
+    this.scene, 0, 6.1, z,
+    150, 0.18, 1.5,
+    0xff4bd8
+  );
+}
+  
       this.addNeon(
         this.scene, 0, 6.1, z,
         150, 0.18, 1.5,
