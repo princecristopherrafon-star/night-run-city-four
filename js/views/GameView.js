@@ -118,30 +118,56 @@ resizeRenderer() {
   this.camera.updateProjectionMatrix();
 }
 
+
 getGroundHeight(x, z, currentHeight = 0) {
+  // Default ground level
   let bestHeight = 0;
-  let bestDifference = Math.abs(currentHeight);
+  let bestDifference = Infinity;
 
   for (const floor of this.floorZones) {
     if (
-      x >= floor.minX &&
-      x <= floor.maxX &&
-      z >= floor.minZ &&
-      z <= floor.maxZ
+      x < floor.minX ||
+      x > floor.maxX ||
+      z < floor.minZ ||
+      z > floor.maxZ
     ) {
-      const difference = Math.abs(
-        floor.height - currentHeight
+      continue;
+    }
+
+    // Sloped ramp
+    if (floor.type === "ramp") {
+      const start = floor.startZ;
+      const end = floor.endZ;
+
+      const t = Math.max(
+        0,
+        Math.min(1, (z - start) / (end - start))
       );
 
-      if (difference < bestDifference) {
-        bestDifference = difference;
-        bestHeight = floor.height;
-      }
+      return (
+        floor.startHeight +
+        (floor.endHeight - floor.startHeight) * t
+      );
+    }
+
+    // Upper floor: only select when player is
+    // already close to that floor's height.
+    const difference = Math.abs(
+      floor.height - currentHeight
+    );
+
+    if (
+      difference < bestDifference &&
+      difference < 1.25
+    ) {
+      bestDifference = difference;
+      bestHeight = floor.height;
     }
   }
 
   return bestHeight;
 }
+  
   
   
   
