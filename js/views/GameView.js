@@ -680,143 +680,6 @@ group.userData = {
       0x76432d, 0xffa64a, "cafe"
     );
 
-    this.createEnterableBuilding(
-      "POLICE STATION", 58, 25,
-      0x294b70, 0x58c9ff, "office"
-    );
-
-        // SKYLINE - KEEP ALL ROADS CLEAR
-    for (let z = -115; z < 145; z += 28) {
-      this.createBuilding(
-        -94 + rand(-1, 1),
-        z,
-        rand(10, 17),
-        rand(16, 48),
-        rand(10, 17)
-      );
-
-      this.createBuilding(
-        94 + rand(-1, 1),
-        z,
-        rand(10, 17),
-        rand(16, 52),
-        rand(10, 17)
-      );
-    }
-
-    // BUILDINGS BETWEEN VERTICAL ROADS
-    for (const x of [-54, -18, 18, 54]) {
-      this.createBuilding(
-        x,
-        -100 + rand(-1, 1),
-        rand(10, 16),
-        rand(15, 42),
-        rand(10, 16)
-      );
-    }
-
-    // Neon Plaza fountain
-    const plaza = new THREE.Group();
-
-    this.addBox(
-      plaza, 0, 0.12, 0,
-      18, 0.24, 14,
-      this.mat(0x565078)
-    );
-
-    this.addBox(
-      plaza, 0, 0.45, 0,
-      5.8, 0.55, 5.8,
-      this.mat(0x7772a0)
-    );
-
-    this.addBox(
-      plaza, 0, 1.25, 0,
-      2.8, 1.2, 2.8,
-      this.basic(0x37dfff)
-    );
-
-    this.addBox(
-      plaza, 0, 2.05, 0,
-      1, 0.6, 1,
-      this.basic(0xff55d8)
-    );
-
-    for (const x of [-6, 6]) {
-      this.addBox(
-        plaza, x, 0.55, 4,
-        3, 0.6, 0.8,
-        this.mat(0x805c9a)
-      );
-    }
-
-    plaza.position.set(0, 0, 22);
-    this.scene.add(plaza);
-
-    this.landmarks.push({
-      name: "NEON PLAZA",
-      x: 0,
-      z: 22,
-      group: plaza
-    });
-
-    // Park trees and benches
-    for (const x of [-8, 8]) {
-      for (const z of [-8, 8]) {
-        this.createTree(x - 58, z - 35);
-      }
-    }
-
-    for (const x of [-64, -52]) {
-      this.addBox(
-        this.scene, x, 0.55, -35,
-        3, 0.25, 0.8,
-        this.mat(0x986a4b)
-      );
-
-      this.addBox(
-        this.scene, x, 0.3, -35,
-        0.25, 0.6, 0.25,
-        this.mat(0x4c3b39)
-      );
-    }
-
-    // School playground
-    this.addBox(
-      this.scene, 23, 0.05, -34,
-      18, 0.1, 12,
-      this.mat(0x357c65)
-    );
-
-    this.addBox(
-      this.scene, 23, 1, -40,
-      0.18, 2, 0.18,
-      this.basic(0xffd84a)
-    );
-
-    this.addBox(
-      this.scene, 27, 1, -40,
-      0.18, 2, 0.18,
-      this.basic(0xffd84a)
-    );
-
-    this.addBox(
-      this.scene, 25, 2, -40,
-      4.2, 0.18, 0.18,
-      this.basic(0xffd84a)
-    );
-
-    // Parking lot and low-poly cars
-    this.addBox(
-      this.scene, 62, 0.025, -38,
-      24, 0.05, 18,
-      this.mat(0x34364e)
-    );
-
-    const carColors = [
-      0xff4d88,
-      0x42dfff,
-      0xffd34e,
 
   createCity() {
     const THREE = this.THREE;
@@ -868,7 +731,8 @@ group.userData = {
     );
     arenaLight.position.set(0, 12, 12);
     this.scene.add(arenaLight);
-    }
+  }
+    
     
   createObstacles() {
     const THREE = this.THREE;
