@@ -21,6 +21,7 @@ export default class GameView {
     this.lamps = [];
     this.pickups = [];
     this.landmarks = [];
+    this.floorZones = [];
 
     this.portraitPaths = [
       "./assets/63.jpg",
@@ -116,7 +117,20 @@ resizeRenderer() {
   this.camera.aspect = width / height;
   this.camera.updateProjectionMatrix();
 }
+getGroundHeight(x, z) {
+  for (const floor of this.floorZones) {
+    if (
+      x >= floor.minX &&
+      x <= floor.maxX &&
+      z >= floor.minZ &&
+      z <= floor.maxZ
+    ) {
+      return floor.height;
+    }
+  }
 
+  return 0;
+}
   
   
 
