@@ -117,6 +117,23 @@ resizeRenderer() {
   this.camera.aspect = width / height;
   this.camera.updateProjectionMatrix();
 }
+  
+createEnemies() {
+  this.enemies = [];
+
+  for (let i = 0; i < 4; i++) {
+    const enemy = new Enemy(
+      this.THREE,
+      this.scene,
+      this.textureLoader,
+      i,
+      this.portraitPaths
+    );
+
+    this.enemies.push(enemy);
+  }
+}
+  
 
 
 getGroundHeight(x, z, currentHeight = 0) {
