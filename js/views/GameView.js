@@ -439,6 +439,23 @@ this.addBox(
     w + 0.5, 0.25, d + 0.5,
     this.basic(accent)
   );
+    // INDUSTRIAL STEEL SUPPORT BEAMS
+  const steelMat = this.mat(0x303b43);
+
+  for (const sx of [-1, 1]) {
+    for (const sz of [-1, 1]) {
+      this.addBox(
+        group,
+        sx * (w / 2 - 0.4),
+        h / 2,
+        sz * (d / 2 - 0.4),
+        0.55,
+        h,
+        0.55,
+        steelMat
+      );
+    }
+  }
 
   // BUILDING SIGN
   this.addBox(
