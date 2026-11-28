@@ -33,13 +33,13 @@ export default class GameView {
 this.config = {
   height: 480,
 
-  walkSpeed: 7.5,
-  sprintSpeed: 13.5,
+  walkSpeed: 10,
+  sprintSpeed: 19,
 
-  acceleration: 16,
+  acceleration: 22,
   friction: 11,
 
-  enemySpeed: 4.15,
+  enemySpeed: 6.5,
   enemyMinDistance: 2,
   fogDistance: 180
 };
