@@ -670,10 +670,10 @@ group.userData = {
       0x294b70, 0x58c9ff, "office"
     );
 
-    // Skyline
+        // SKYLINE - KEEP ALL ROADS CLEAR
     for (let z = -115; z < 145; z += 28) {
       this.createBuilding(
-        -82 + rand(-3, 3),
+        -94 + rand(-1, 1),
         z,
         rand(10, 17),
         rand(16, 48),
@@ -681,7 +681,7 @@ group.userData = {
       );
 
       this.createBuilding(
-        82 + rand(-3, 3),
+        94 + rand(-1, 1),
         z,
         rand(10, 17),
         rand(16, 52),
@@ -689,10 +689,11 @@ group.userData = {
       );
     }
 
-    for (let x = -55; x <= 55; x += 22) {
+    // BUILDINGS BETWEEN VERTICAL ROADS
+    for (const x of [-54, -18, 18, 54]) {
       this.createBuilding(
         x,
-        -90 + rand(-3, 3),
+        -100 + rand(-1, 1),
         rand(10, 16),
         rand(15, 42),
         rand(10, 16)
