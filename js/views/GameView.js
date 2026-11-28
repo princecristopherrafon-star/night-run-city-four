@@ -117,8 +117,7 @@ resizeRenderer() {
   this.camera.updateProjectionMatrix();
 }
 
-    this.camera.aspect = width / height;
-    this.camera.updateProjectionMatrix();
+  
   }
 
   mat(color) {
