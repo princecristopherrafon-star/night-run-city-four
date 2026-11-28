@@ -1045,13 +1045,14 @@ resolveBuildingCollisions(previousX, previousZ) {
       }
 
       const distance = enemy.update(
-        this.player,
-        dt,
-        time,
-        index,
-        this.view.config.enemySpeed
-      );
-
+  this.player,
+  dt,
+  time,
+  index,
+  this.view.config.enemySpeed,
+  this.view.obstacles || [],
+  this.view.buildings || []
+);
       closest = Math.min(closest, distance);
 
       if (distance < this.view.config.enemyMinDistance) {
