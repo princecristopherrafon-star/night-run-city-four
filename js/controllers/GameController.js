@@ -1268,17 +1268,43 @@ export default class GameController {
   }
 
   updateObstacles() {
-    this.view.obstacles.forEach(obstacle => {
-      const distance = Math.hypot(
-        this.player.x - obstacle.position.x,
-        this.player.z - obstacle.position.z
-      );
+  this.view.obstacles.forEach(obstacle => {
+    const params = obstacle.geometry.parameters;
 
-      if (distance < 1.2 && this.player.y < 2.35) {
-        this.player.velocity.x *= 0.15;
-        this.player.velocity.z *= 0.15;
+    const halfWidth = params.width / 2 + 0.35;
+    const halfDepth = params.depth / 2 + 0.35;
+
+    const dx = this.player.x - obstacle.position.x;
+    const dz = this.player.z - obstacle.position.z;
+
+    const obstacleTop =
+      obstacle.position.y + params.height / 2;
+
+    const playerFeet = this.player.y - 1.7;
+
+    // Allow the player to jump over the obstacle
+    if (playerFeet >= obstacleTop) return;
+
+    if (
+      Math.abs(dx) < halfWidth &&
+      Math.abs(dz) < halfDepth
+    ) {
+      const overlapX = halfWidth - Math.abs(dx);
+      const overlapZ = halfDepth - Math.abs(dz);
+
+      if (overlapX < overlapZ) {
+        this.player.x +=
+          Math.sign(dx || 1) * overlapX;
+
+        this.player.velocity.x = 0;
+      } else {
+        this.player.z +=
+          Math.sign(dz || 1) * overlapZ;
+
+        this.player.velocity.z = 0;
       }
-    });
+    }
+  });
   }
 
   endGame() {
