@@ -1,9 +1,11 @@
-const CACHE = "night-run-v9";
+const CACHE = "night-run-v10";
 const CORE = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./icon.svg",
+  "./icon-192.png",
+  "./icon-512.png",
   "./css/style.css",
   "./js/main.js",
   "./js/models/Player.js",
@@ -18,7 +20,9 @@ const CORE = [
 self.addEventListener("install", event => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE).then(cache => cache.addAll(CORE))
+    caches.open(CACHE).then(cache => {
+      return Promise.allSettled(CORE.map(url => cache.add(url)));
+    })
   );
 });
 
@@ -36,7 +40,6 @@ self.addEventListener("fetch", event => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  // LAHAT NG FILES - NETWORK FIRST, para laging bago
   event.respondWith(
     fetch(request)
       .then(response => {
