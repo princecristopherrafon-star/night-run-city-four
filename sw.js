@@ -1,16 +1,22 @@
-
-const CACHE = "night-run-v6";
-
+const CACHE = "night-run-v7";
 const CORE = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./icon.svg"
+  "./icon.svg",
+  "./css/style.css",
+  "./js/main.js",
+  "./js/models/Player.js",
+  "./js/models/Enemy.js",
+  "./js/models/Weapon.js",
+  "./js/models/Score.js",
+  "./js/dao/SaveDAO.js",
+  "./js/views/GameView.js",
+  "./js/controllers/GameController.js"
 ];
 
 self.addEventListener("install", event => {
   self.skipWaiting();
-
   event.waitUntil(
     caches.open(CACHE).then(cache => cache.addAll(CORE))
   );
@@ -18,64 +24,28 @@ self.addEventListener("install", event => {
 
 self.addEventListener("activate", event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys
-          .filter(key => key !== CACHE)
-          .map(key => caches.delete(key))
-      )
-    ).then(() => self.clients.claim())
+    caches.keys().then(keys => Promise.all(
+      keys.filter(key => key !== CACHE).map(key => caches.delete(key))
+    )).then(() => self.clients.claim())
   );
 });
 
 self.addEventListener("fetch", event => {
   const request = event.request;
-
   if (request.method !== "GET") return;
-
   const url = new URL(request.url);
-
-  // Only handle this website's own files.
   if (url.origin !== self.location.origin) return;
 
-  // Always check the network first for HTML pages.
-  if (request.mode === "navigate" ||
-      url.pathname.endsWith(".html") ||
-      url.pathname.endsWith("/")) {
-
-    event.respondWith(
-      fetch(request)
-        .then(response => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE).then(cache =>
-              cache.put(request, copy)
-            );
-          }
-          return response;
-        })
-        .catch(() =>
-          caches.match(request).then(hit =>
-            hit || caches.match("./index.html")
-          )
-        )
-    );
-
-    return;
-  }
-
-  // Cache other local files when available.
+  // LAHAT NG FILES - NETWORK FIRST, para laging bago
   event.respondWith(
-    caches.match(request).then(hit =>
-      hit || fetch(request).then(response => {
+    fetch(request)
+      .then(response => {
         if (response.ok) {
           const copy = response.clone();
-          caches.open(CACHE).then(cache =>
-            cache.put(request, copy)
-          );
+          caches.open(CACHE).then(cache => cache.put(request, copy));
         }
         return response;
       })
-    )
+      .catch(() => caches.match(request).then(hit => hit || caches.match("./index.html")))
   );
 });
