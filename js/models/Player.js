@@ -65,34 +65,33 @@ export default class Player {
       );
     }
 
-// CAMERA-RELATIVE MOVEMENT
-const forwardX = Math.sin(this.yaw);
-const forwardZ = -Math.cos(this.yaw);
+    // CAMERA-RELATIVE MOVEMENT
+    const forwardX = Math.sin(this.yaw);
+    const forwardZ = -Math.cos(this.yaw);
 
-const rightX = Math.cos(this.yaw);
-const rightZ = Math.sin(this.yaw);
+    const rightX = Math.cos(this.yaw);
+    const rightZ = Math.sin(this.yaw);
 
-let desiredX =
-  forwardX * -joystick.y -
-  rightX * joystick.x;
+    let desiredX =
+      forwardX * -joystick.y +
+      rightX * joystick.x;
 
-let desiredZ =
-  forwardZ * -joystick.y -
-  rightZ * joystick.x;
+    let desiredZ =
+      forwardZ * -joystick.y +
+      rightZ * joystick.x;
 
-const length = Math.hypot(
-  desiredX,
-  desiredZ
-);
+    const length = Math.hypot(
+      desiredX,
+      desiredZ
+    );
 
-if (length > 1) {
-  desiredX /= length;
-  desiredZ /= length;
-}
+    if (length > 1) {
+      desiredX /= length;
+      desiredZ /= length;
+    }
 
-desiredX *= speed;
-desiredZ *= speed;
-    
+    desiredX *= speed;
+    desiredZ *= speed;
 
     // SMOOTH ACCELERATION
     const acceleration =
@@ -113,20 +112,20 @@ desiredZ *= speed;
     this.x += this.velocity.x * dt;
     this.z += this.velocity.z * dt;
 
-    // CITY BOUNDARIES
+    // EXPANDED CITY BOUNDARIES
     const previousX = this.x;
     const previousZ = this.z;
 
     this.x = THREE.MathUtils.clamp(
       this.x,
-      -90,
-      90
+      -110,
+      110
     );
 
     this.z = THREE.MathUtils.clamp(
       this.z,
-      -150,
-      150
+      -180,
+      180
     );
 
     if (this.x !== previousX) {
@@ -147,7 +146,7 @@ desiredZ *= speed;
       this.jumpActive = false;
     }
 
-    // WALK BOB
+    // WALK CAMERA BOB
     this.walkTime +=
       dt *
       (
@@ -166,4 +165,4 @@ desiredZ *= speed;
       ? Math.sin(this.walkTime * 2.2) * 0.045
       : 0;
   }
-                            }
+}
