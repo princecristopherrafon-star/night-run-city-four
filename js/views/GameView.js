@@ -214,12 +214,18 @@ this.config = {
     );
 
     group.position.set(x, 0, z);
-    this.scene.add(group);
-    this.buildings.push(group);
 
-    return group;
-                               }
+group.userData = {
+  width,
+  height,
+  depth,
+  solid: true
+};
 
+this.scene.add(group);
+this.buildings.push(group);
+
+return group;
 
   createEnterableBuilding(name, x, z, color, accent, type) {
     const THREE = this.THREE;
