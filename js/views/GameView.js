@@ -155,11 +155,16 @@ getGroundHeight(x, z, currentHeight = 0) {
   }
 
   addBox(parent, x, y, z, w, h, d, material) {
-    const detectedHeight = getGroundHeight(
-  this.x,
-  this.z,
-  this.groundY
-);
+  const mesh = new this.THREE.Mesh(
+    new this.THREE.BoxGeometry(w, h, d),
+    material
+  );
+
+  mesh.position.set(x, y, z);
+  parent.add(mesh);
+
+  return mesh;
+  }
 
     mesh.position.set(x, y, z);
     parent.add(mesh);
