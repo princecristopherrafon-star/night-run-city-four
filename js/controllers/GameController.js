@@ -1,6 +1,5 @@
 import Weapon from "../models/Weapon.js";
 
-
 export default class GameController {
   constructor(THREE, view, player, score, saveDAO) {
     this.THREE = THREE;
@@ -33,6 +32,7 @@ export default class GameController {
     this.currentWeapon = null;
     this.pickupObjects = [];
     this.nearbyPickup = null;
+
     this.shootHeld = false;
     this.fireCooldown = 0;
     this.raycaster = new THREE.Raycaster();
@@ -47,6 +47,7 @@ export default class GameController {
 
   setReady(value) {
     this.ready = value;
+
     if (value) {
       this.createPickups();
       this.updateWeaponHud();
@@ -54,21 +55,27 @@ export default class GameController {
   }
 
   toast(message) {
-    this.$("toast").textContent = message;
-    this.$("toast").style.opacity = 1;
+    const element = this.$("toast");
+    if (!element) return;
+
+    element.textContent = message;
+    element.style.opacity = 1;
 
     clearTimeout(this.toastTimer);
 
     this.toastTimer = setTimeout(() => {
-      this.$("toast").style.opacity = 0;
+      element.style.opacity = 0;
     }, 2600);
   }
 
   showStartError(error) {
     console.error("NIGHT RUN START ERROR:", error);
 
-    this.$("menu").style.display = "flex";
-    this.$("hud").style.display = "none";
+    const menu = this.$("menu");
+    const hud = this.$("hud");
+
+    if (menu) menu.style.display = "flex";
+    if (hud) hud.style.display = "none";
 
     this.toast(
       "START ERROR: " + (error.message || "Unknown problem")
@@ -114,7 +121,9 @@ export default class GameController {
   }
 
   pauseAudio() {
-    if (this.bgMusic) this.bgMusic.pause();
+    if (this.bgMusic) {
+      this.bgMusic.pause();
+    }
 
     this.enemyAudio.forEach(audio => {
       audio.pause();
@@ -128,25 +137,35 @@ export default class GameController {
     if (!this.audioContext) {
       try {
         this.audioContext = new (
-          window.AudioContext || window.webkitAudioContext
+          window.AudioContext ||
+          window.webkitAudioContext
         )();
 
-        this.masterGain = this.audioContext.createGain();
-        this.masterGain.gain.value = this.musicOn ? 0.17 : 0;
+        this.masterGain =
+          this.audioContext.createGain();
+
+        this.masterGain.gain.value =
+          this.musicOn ? 0.17 : 0;
 
         this.masterGain.connect(
           this.audioContext.destination
         );
 
-        this.droneOsc = this.audioContext.createOscillator();
+        this.droneOsc =
+          this.audioContext.createOscillator();
+
         this.droneOsc.type = "sawtooth";
         this.droneOsc.frequency.value = 43;
 
-        const filter = this.audioContext.createBiquadFilter();
+        const filter =
+          this.audioContext.createBiquadFilter();
+
         filter.type = "lowpass";
         filter.frequency.value = 110;
 
-        const gain = this.audioContext.createGain();
+        const gain =
+          this.audioContext.createGain();
+
         gain.gain.value = 0.12;
 
         this.droneOsc.connect(filter);
@@ -163,12 +182,20 @@ export default class GameController {
     this.playAudio();
   }
 
-  sound(freq = 100, duration = 0.15, volume = 0.1, type = "sine") {
+  sound(
+    freq = 100,
+    duration = 0.15,
+    volume = 0.1,
+    type = "sine"
+  ) {
     if (!this.audioContext || !this.musicOn) return;
 
     try {
-      const oscillator = this.audioContext.createOscillator();
-      const gain = this.audioContext.createGain();
+      const oscillator =
+        this.audioContext.createOscillator();
+
+      const gain =
+        this.audioContext.createGain();
 
       oscillator.type = type;
 
@@ -191,6 +218,7 @@ export default class GameController {
       gain.connect(this.masterGain);
 
       oscillator.start();
+
       oscillator.stop(
         this.audioContext.currentTime + duration
       );
@@ -201,37 +229,41 @@ export default class GameController {
   }
 
   updateAudio(distance) {
-    if (this.audioContext && this.droneOsc && this.masterGain) {
-      const danger = this.THREE.MathUtils.clamp(
-        1 - distance / 35,
-        0,
-        1
-      );
+    if (
+      !this.audioContext ||
+      !this.droneOsc ||
+      !this.masterGain
+    ) return;
 
-      this.droneOsc.frequency.setTargetAtTime(
-        43 + danger * 35,
-        this.audioContext.currentTime,
-        0.2
-      );
+    const danger = this.THREE.MathUtils.clamp(
+      1 - distance / 35,
+      0,
+      1
+    );
 
-      this.masterGain.gain.setTargetAtTime(
-        this.musicOn ? 0.17 : 0,
-        this.audioContext.currentTime,
-        0.15
-      );
-    }
+    this.droneOsc.frequency.setTargetAtTime(
+      43 + danger * 35,
+      this.audioContext.currentTime,
+      0.2
+    );
+
+    this.masterGain.gain.setTargetAtTime(
+      this.musicOn ? 0.17 : 0,
+      this.audioContext.currentTime,
+      0.15
+    );
   }
 
   updateEnemySounds() {
     if (!this.enemyAudio.length) return;
 
     this.view.enemies.forEach((enemy, index) => {
+      const audio = this.enemyAudio[index];
+      if (!audio) return;
+
       if (enemy.active === false) {
-        const deadAudio = this.enemyAudio[index];
-        if (deadAudio) {
-          deadAudio.pause();
-          deadAudio.volume = 0;
-        }
+        audio.pause();
+        audio.volume = 0;
         return;
       }
 
@@ -239,42 +271,6 @@ export default class GameController {
         this.player.x - enemy.group.position.x,
         this.player.z - enemy.group.position.z
       );
-
-      const volume = this.THREE.MathUtils.clamp(
-        1 - distance / 35,
-        0,
-        1
-      );
-
-      const audio = this.enemyAudio[index];
-
-      if (audio) {
-        audio.volume = volume * 0.7;
-
-        if (this.playing && !this.paused && audio.paused) {
-          audio.play().catch(() => {});
-        }
-      }
-    });
-             }
-    updateEnemySounds() {
-    if (!this.enemyAudio.length) return;
-
-    this.view.enemies.forEach((enemy, index) => {
-      if (enemy.active === false) {
-        const deadAudio = this.enemyAudio[index];
-        if (deadAudio) {
-          deadAudio.pause();
-          deadAudio.volume = 0;
-        }
-        return;
-      }
-      const distance = Math.hypot(
-        this.player.x - enemy.group.position.x,
-        this.player.z - enemy.group.position.z
-      );
-
-      const audio = this.enemyAudio[index];
 
       const volume =
         this.musicOn && this.playing && !this.paused
@@ -295,8 +291,190 @@ export default class GameController {
         audio.pause();
       }
     });
+}
+    makePickupPart(group, geometry, color, x, y, z, rx = 0, ry = 0, rz = 0) {
+    const mesh = new this.THREE.Mesh(
+      geometry,
+      new this.THREE.MeshLambertMaterial({
+        color,
+        flatShading: true
+      })
+    );
+
+    mesh.position.set(x, y, z);
+    mesh.rotation.set(rx, ry, rz);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    group.add(mesh);
+    return mesh;
+  }
+
+  createPickupWeaponModel(group, type, color) {
+    const THREE = this.THREE;
+
+    const dark = 0x202a35;
+    const metal = 0x71818e;
+    const grip = 0x30343b;
+
+    if (type === "pistol") {
+      // Pistol slide
+      this.makePickupPart(
+        group,
+        new THREE.BoxGeometry(0.82, 0.19, 0.24),
+        color,
+        0.02, 0.72, 0
+      );
+
+      // Pistol grip
+      this.makePickupPart(
+        group,
+        new THREE.BoxGeometry(0.24, 0.43, 0.22),
+        grip,
+        -0.17, 0.43, 0,
+        0, 0, -0.22
+      );
+
+      // Barrel
+      this.makePickupPart(
+        group,
+        new THREE.CylinderGeometry(0.055, 0.055, 0.24, 8),
+        metal,
+        0.51, 0.72, 0,
+        0, 0, Math.PI / 2
+      );
+
+      // Handle detail
+      this.makePickupPart(
+        group,
+        new THREE.BoxGeometry(0.12, 0.22, 0.235),
+        dark,
+        -0.19, 0.42, 0
+      );
+
+      // Sight
+      this.makePickupPart(
+        group,
+        new THREE.BoxGeometry(0.12, 0.07, 0.12),
+        metal,
+        0.12, 0.85, 0
+      );
     }
-  
+
+    if (type === "rifle") {
+      // Main receiver
+      this.makePickupPart(
+        group,
+        new THREE.BoxGeometry(0.85, 0.23, 0.27),
+        color,
+        0, 0.72, 0
+      );
+
+      // Long barrel
+      this.makePickupPart(
+        group,
+        new THREE.CylinderGeometry(0.055, 0.055, 0.95, 8),
+        metal,
+        0.83, 0.75, 0,
+        0, 0, Math.PI / 2
+      );
+
+      // Stock
+      this.makePickupPart(
+        group,
+        new THREE.BoxGeometry(0.48, 0.22, 0.25),
+        dark,
+        -0.65, 0.69, 0
+      );
+
+      // Magazine
+      this.makePickupPart(
+        group,
+        new THREE.BoxGeometry(0.22, 0.48, 0.22),
+        grip,
+        0.02, 0.39, 0,
+        0, 0, -0.12
+      );
+
+      // Top rail
+      this.makePickupPart(
+        group,
+        new THREE.BoxGeometry(0.48, 0.07, 0.17),
+        metal,
+        0.05, 0.88, 0
+      );
+
+      // Scope
+      this.makePickupPart(
+        group,
+        new THREE.CylinderGeometry(0.09, 0.09, 0.27, 8),
+        dark,
+        0.02, 1.02, 0,
+        Math.PI / 2, 0, 0
+      );
+
+      // Front grip
+      this.makePickupPart(
+        group,
+        new THREE.BoxGeometry(0.16, 0.3, 0.2),
+        grip,
+        0.42, 0.49, 0
+      );
+    }
+
+    if (type === "shotgun") {
+      // Main body
+      this.makePickupPart(
+        group,
+        new THREE.BoxGeometry(0.8, 0.23, 0.28),
+        color,
+        0, 0.72, 0
+      );
+
+      // Long barrel
+      this.makePickupPart(
+        group,
+        new THREE.CylinderGeometry(0.065, 0.065, 1.05, 8),
+        metal,
+        0.82, 0.76, 0,
+        0, 0, Math.PI / 2
+      );
+
+      // Wooden stock
+      this.makePickupPart(
+        group,
+        new THREE.BoxGeometry(0.52, 0.24, 0.27),
+        0x9b6336,
+        -0.65, 0.69, 0
+      );
+
+      // Pump grip
+      this.makePickupPart(
+        group,
+        new THREE.BoxGeometry(0.32, 0.19, 0.32),
+        0xb8793d,
+        0.43, 0.55, 0
+      );
+
+      // Trigger grip
+      this.makePickupPart(
+        group,
+        new THREE.BoxGeometry(0.2, 0.36, 0.22),
+        dark,
+        -0.12, 0.43, 0
+      );
+
+      // Barrel tip
+      this.makePickupPart(
+        group,
+        new THREE.CylinderGeometry(0.085, 0.085, 0.1, 8),
+        dark,
+        1.36, 0.76, 0,
+        0, 0, Math.PI / 2
+      );
+    }
+  }
+
   createPickups() {
     if (!this.view.scene || this.pickupObjects.length) return;
 
@@ -305,20 +483,42 @@ export default class GameController {
     const addPickup = (kind, type, x, z, color, label) => {
       const group = new THREE.Group();
 
-      const body = new THREE.Mesh(
-        new THREE.BoxGeometry(
-          kind === "weapon" ? 0.95 : 0.8,
-          kind === "weapon" ? 0.28 : 0.65,
-          kind === "weapon" ? 0.28 : 0.8
-        ),
-        new THREE.MeshLambertMaterial({ color })
-      );
+      if (kind === "weapon") {
+        this.createPickupWeaponModel(group, type, color);
+      } else {
+        // Ammo crate
+        this.makePickupPart(
+          group,
+          new THREE.BoxGeometry(0.85, 0.65, 0.75),
+          0x287c45,
+          0, 0.43, 0
+        );
 
-      body.position.y = 0.55;
-      group.add(body);
+        // Yellow crate stripe
+        this.makePickupPart(
+          group,
+          new THREE.BoxGeometry(0.88, 0.13, 0.78),
+          0xffd84a,
+          0, 0.48, 0
+        );
 
+        // Ammo rounds
+        for (let i = 0; i < 3; i++) {
+          this.makePickupPart(
+            group,
+            new THREE.CylinderGeometry(0.065, 0.065, 0.32, 8),
+            0xd5dce4,
+            -0.22 + i * 0.22,
+            0.88,
+            0,
+            0, 0, 0
+          );
+        }
+      }
+
+      // Neon pickup ring
       const glow = new THREE.Mesh(
-        new THREE.TorusGeometry(0.78, 0.055, 6, 18),
+        new THREE.TorusGeometry(0.82, 0.055, 6, 20),
         new THREE.MeshBasicMaterial({ color })
       );
 
@@ -326,21 +526,27 @@ export default class GameController {
       glow.position.y = 0.08;
       group.add(glow);
 
-      const light = new THREE.PointLight(color, 0.65, 5);
-      light.position.y = 1;
+      // Glow light
+      const light = new THREE.PointLight(color, 0.8, 6);
+      light.position.y = 1.1;
       group.add(light);
 
       group.position.set(x, 0, z);
-      group.userData = { kind, type, label, baseY: 0 };
+      group.userData = {
+        kind,
+        type,
+        label,
+        baseY: 0
+      };
 
       this.view.scene.add(group);
       this.pickupObjects.push(group);
     };
 
-    // Weapon locations
-    addPickup("weapon", "pistol", -23, -8, 0x45f4d0, "PISTOL");
-    addPickup("weapon", "rifle", 23, -8, 0xffd84a, "RIFLE");
-    addPickup("weapon", "shotgun", -23, 28, 0xff4564, "SHOTGUN");
+    // Weapons placed outside building entrances
+    addPickup("weapon", "pistol", -23, -23, 0x45f4d0, "PISTOL");
+    addPickup("weapon", "rifle", 23, -23, 0xffd84a, "RIFLE");
+    addPickup("weapon", "shotgun", -23, 40, 0xff4564, "SHOTGUN");
 
     // Ammo stations
     addPickup("ammo", "ammo", -58, -35, 0x62ff91, "AMMO");
@@ -348,9 +554,8 @@ export default class GameController {
     addPickup("ammo", "ammo", -28, 58, 0x62ff91, "AMMO");
 
     this.view.pickups = this.pickupObjects;
-  }
-
-  updateWeaponHud() {
+                       }
+    updateWeaponHud() {
     const name = this.$("weaponName");
     const ammo = this.$("weaponAmmo");
     const shoot = this.$("shootBtn");
@@ -368,7 +573,8 @@ export default class GameController {
     }
 
     if (shoot) {
-      shoot.style.display = this.currentWeapon ? "block" : "none";
+      shoot.style.display =
+        this.currentWeapon ? "block" : "none";
     }
   }
 
@@ -394,16 +600,17 @@ export default class GameController {
 
     const button = this.$("pickupBtn");
 
-    if (button) {
-      if (nearest && this.playing && !this.paused) {
-        button.style.display = "block";
-        button.textContent =
-          nearest.userData.kind === "weapon"
-            ? "PICK UP " + nearest.userData.label
-            : "PICK UP AMMO";
-      } else {
-        button.style.display = "none";
-      }
+    if (!button) return;
+
+    if (nearest && this.playing && !this.paused) {
+      button.style.display = "block";
+
+      button.textContent =
+        nearest.userData.kind === "weapon"
+          ? "PICK UP " + nearest.userData.label
+          : "PICK UP AMMO";
+    } else {
+      button.style.display = "none";
     }
   }
 
@@ -462,7 +669,12 @@ export default class GameController {
   fireWeapon() {
     const weapon = this.currentWeapon;
 
-    if (!weapon || !this.playing || this.paused || this.gameOver) {
+    if (
+      !weapon ||
+      !this.playing ||
+      this.paused ||
+      this.gameOver
+    ) {
       return;
     }
 
@@ -474,6 +686,7 @@ export default class GameController {
     }
 
     this.fireCooldown = weapon.fireRate;
+
     this.showMuzzleFlash();
 
     this.sound(
@@ -530,7 +743,12 @@ export default class GameController {
       let nearestDistance = Infinity;
 
       for (const enemy of this.view.enemies) {
-        if (enemy.active === false || !enemy.group.visible) continue;
+        if (
+          enemy.active === false ||
+          !enemy.group.visible
+        ) {
+          continue;
+        }
 
         const box = new this.THREE.Box3()
           .setFromObject(enemy.group);
@@ -574,6 +792,7 @@ export default class GameController {
         enemy.active = false;
         enemy.deadUntil = performance.now() + 4500;
         enemy.group.visible = false;
+
         this.toast("TARGET ELIMINATED");
       }
     }
@@ -598,20 +817,19 @@ export default class GameController {
     this.checkPickupRange();
 
     for (const pickup of this.pickupObjects) {
-      if (pickup.visible) {
-        pickup.rotation.y += dt * 1.1;
+      if (!pickup.visible) continue;
 
-        pickup.position.y =
-          0.08 +
-          Math.sin(
-            performance.now() * 0.003 + pickup.position.x
-          ) * 0.08;
-      }
+      pickup.rotation.y += dt * 1.1;
+
+      pickup.position.y =
+        0.08 +
+        Math.sin(
+          performance.now() * 0.003 +
+          pickup.position.x
+        ) * 0.08;
     }
-  }
-  
-  
-  resetGame() {
+    }
+    resetGame() {
     if (!this.ready) {
       throw new Error("The 3D city is not ready yet.");
     }
@@ -647,8 +865,16 @@ export default class GameController {
 
     this.updateWeaponHud();
 
-    this.$("stick").style.transform = "translate(0px,0px)";
-    this.$("caught").style.display = "none";
+    const stick = this.$("stick");
+    const caught = this.$("caught");
+
+    if (stick) {
+      stick.style.transform = "translate(0px,0px)";
+    }
+
+    if (caught) {
+      caught.style.display = "none";
+    }
 
     this.enemyAudio.forEach(audio => {
       audio.pause();
@@ -661,6 +887,11 @@ export default class GameController {
   setupJoystick() {
     const element = this.$("joystick");
     const stick = this.$("stick");
+
+    if (!element || !stick) {
+      console.warn("Joystick elements not found.");
+      return;
+    }
 
     const move = event => {
       const rect = element.getBoundingClientRect();
@@ -739,7 +970,9 @@ export default class GameController {
       if (
         !this.touchLook ||
         event.pointerId !== this.touchLook.id
-      ) return;
+      ) {
+        return;
+      }
 
       const dx = event.clientX - this.touchLook.x;
       const dy = event.clientY - this.touchLook.y;
@@ -771,77 +1004,97 @@ export default class GameController {
   }
 
   setupActionButtons() {
-    this.$("sprint").addEventListener("pointerdown", event => {
-      event.preventDefault();
-
-      if (this.playing && !this.paused) {
-        this.sprintHeld = true;
-      }
-    });
-
-    ["pointerup", "pointercancel", "pointerleave"].forEach(type => {
-      this.$("sprint").addEventListener(type, () => {
-        this.sprintHeld = false;
-      });
-    });
-
-    this.$("jump").addEventListener("pointerdown", event => {
-      event.preventDefault();
-
-      if (this.playing && !this.paused) {
-        this.player.jump((...args) => this.sound(...args));
-      }
-    });
-
-    this.$("pickupBtn").addEventListener("pointerdown", event => {
-      event.preventDefault();
-
-      if (this.playing && !this.paused) {
-        this.collectPickup();
-      }
-    });
-
+    const sprint = this.$("sprint");
+    const jump = this.$("jump");
+    const pickup = this.$("pickupBtn");
     const shootButton = this.$("shootBtn");
 
-    shootButton.addEventListener("pointerdown", event => {
-      event.preventDefault();
+    if (sprint) {
+      sprint.addEventListener("pointerdown", event => {
+        event.preventDefault();
 
-      if (!this.playing || this.paused) return;
-
-      this.shootHeld = true;
-
-      if (this.fireCooldown <= 0) {
-        this.fireWeapon();
-      }
-    });
-
-    ["pointerup", "pointercancel", "pointerleave"].forEach(type => {
-      shootButton.addEventListener(type, () => {
-        this.shootHeld = false;
+        if (this.playing && !this.paused) {
+          this.sprintHeld = true;
+        }
       });
-    });
-      }
-        
+
+      ["pointerup", "pointercancel", "pointerleave"].forEach(type => {
+        sprint.addEventListener(type, () => {
+          this.sprintHeld = false;
+        });
+      });
+    }
+
+    if (jump) {
+      jump.addEventListener("pointerdown", event => {
+        event.preventDefault();
+
+        if (this.playing && !this.paused) {
+          this.player.jump((...args) => this.sound(...args));
+        }
+      });
+    }
+
+    if (pickup) {
+      pickup.addEventListener("pointerdown", event => {
+        event.preventDefault();
+
+        if (this.playing && !this.paused) {
+          this.collectPickup();
+        }
+      });
+    }
+
+    if (shootButton) {
+      shootButton.addEventListener("pointerdown", event => {
+        event.preventDefault();
+
+        if (!this.playing || this.paused) return;
+
+        this.shootHeld = true;
+
+        if (this.fireCooldown <= 0) {
+          this.fireWeapon();
+        }
+      });
+
+      ["pointerup", "pointercancel", "pointerleave"].forEach(type => {
+        shootButton.addEventListener(type, () => {
+          this.shootHeld = false;
+        });
+      });
+    }
+  }
+
   startGame(event) {
     if (event) event.preventDefault();
 
     try {
+      const startButton = this.$("start");
+
       if (!this.ready || !this.view.renderer || !this.clock) {
         throw new Error(
           "3D engine is not ready. Reload the page and try again."
         );
       }
 
-      this.$("start").textContent = "STARTING...";
-      this.$("start").disabled = true;
+      if (startButton) {
+        startButton.textContent = "STARTING...";
+        startButton.disabled = true;
+      }
 
       this.initAudio();
       this.resetGame();
 
-      this.$("menu").style.display = "none";
-      this.$("hud").style.display = "block";
-      this.$("caught").style.display = "none";
-      this.$("pauseLayer").style.display = "none";
+      const menu = this.$("menu");
+      const hud = this.$("hud");
+      const caught = this.$("caught");
+      const pauseLayer = this.$("pauseLayer");
+
+      if (menu) menu.style.display = "none";
+      if (hud) hud.style.display = "block";
+      if (caught) caught.style.display = "none";
+      if (pauseLayer) pauseLayer.style.display = "none";
 
       this.paused = false;
       this.gameOver = false;
@@ -855,8 +1108,12 @@ export default class GameController {
       this.showStartError(error);
 
     } finally {
-      this.$("start").disabled = false;
-      this.$("start").textContent = "ENTER THE CITY";
+      const startButton = this.$("start");
+
+      if (startButton) {
+        startButton.disabled = false;
+        startButton.textContent = "ENTER THE CITY";
+      }
     }
   }
 
@@ -870,7 +1127,11 @@ export default class GameController {
 
     this.pauseAudio();
 
-    this.$("pauseLayer").style.display = "flex";
+    const pauseLayer = this.$("pauseLayer");
+
+    if (pauseLayer) {
+      pauseLayer.style.display = "flex";
+    }
   }
 
   resumeGame() {
@@ -879,9 +1140,15 @@ export default class GameController {
     this.paused = false;
     this.playing = true;
 
-    this.$("pauseLayer").style.display = "none";
+    const pauseLayer = this.$("pauseLayer");
 
-    if (this.clock) this.clock.getDelta();
+    if (pauseLayer) {
+      pauseLayer.style.display = "none";
+    }
+
+    if (this.clock) {
+      this.clock.getDelta();
+    }
 
     this.playAudio();
   }
@@ -894,11 +1161,17 @@ export default class GameController {
       this.gameOver = false;
       this.playing = true;
 
-      this.$("pauseLayer").style.display = "none";
-      this.$("menu").style.display = "none";
-      this.$("hud").style.display = "block";
+      const pauseLayer = this.$("pauseLayer");
+      const menu = this.$("menu");
+      const hud = this.$("hud");
 
-      if (this.clock) this.clock.getDelta();
+      if (pauseLayer) pauseLayer.style.display = "none";
+      if (menu) menu.style.display = "none";
+      if (hud) hud.style.display = "block";
+
+      if (this.clock) {
+        this.clock.getDelta();
+      }
 
       this.initAudio();
 
@@ -910,11 +1183,17 @@ export default class GameController {
   toggleMusic() {
     this.musicOn = !this.musicOn;
 
-    this.$("musicToggle").textContent =
-      "BACKGROUND MUSIC: " + (this.musicOn ? "ON" : "OFF");
+    const button = this.$("musicToggle");
+
+    if (button) {
+      button.textContent =
+        "BACKGROUND MUSIC: " + (this.musicOn ? "ON" : "OFF");
+    }
 
     if (this.musicOn) {
-      if (this.playing) this.playAudio();
+      if (this.playing) {
+        this.playAudio();
+      }
     } else {
       this.pauseAudio();
 
@@ -928,107 +1207,18 @@ export default class GameController {
     }
   }
 
-  
-updateMovement(dt) {
-  const previousX = this.player.x;
-  const previousZ = this.player.z;
+  updateMovement(dt) {
+    const bob = this.player.update(
+      this.THREE,
+      dt,
+      this.joystick,
+      this.sprintHeld,
+      this.view.config
+    );
 
-  const bob = this.player.update(
-    this.THREE,
-    dt,
-    this.joystick,
-    this.sprintHeld,
-    this.view.config
-  );
-
-  this.resolveBuildingCollisions(previousX, previousZ);
-
-  this.view.setCamera(this.player, bob);
-}
-  
-resolveBuildingCollisions(previousX, previousZ) {
-  const radius = 0.55;
-
-  const currentX = this.player.x;
-  const currentZ = this.player.z;
-
-  const buildings = this.view.buildings || [];
-
-  for (const building of buildings) {
-    const data = building.userData;
-
-    if (!data || !data.enterable) continue;
-
-    const centerX = building.position.x;
-    const centerZ = building.position.z;
-
-    const minX = centerX - data.width / 2 + radius;
-    const maxX = centerX + data.width / 2 - radius;
-    const minZ = centerZ - data.depth / 2 + radius;
-    const maxZ = centerZ + data.depth / 2 - radius;
-
-    const wasInside =
-      previousX > minX &&
-      previousX < maxX &&
-      previousZ > minZ &&
-      previousZ < maxZ;
-
-    const isInside =
-      currentX > minX &&
-      currentX < maxX &&
-      currentZ > minZ &&
-      currentZ < maxZ;
-
-    const doorHalf =
-      (data.doorWidth || 4) / 2 - radius;
-
-    const crossingX = (previousX + currentX) / 2;
-
-    const nearDoor =
-      Math.abs(crossingX - centerX) < doorHalf;
-
-    const frontZ = centerZ + data.depth / 2 - radius;
-
-    const entering =
-      !wasInside &&
-      isInside &&
-      previousZ >= frontZ &&
-      currentZ < frontZ &&
-      nearDoor;
-
-    const exiting =
-      wasInside &&
-      !isInside &&
-      previousZ < frontZ &&
-      currentZ >= frontZ &&
-      nearDoor;
-
-    if (entering || exiting) {
-      data.occupied = entering;
-      continue;
-    }
-
-    if (!wasInside && isInside) {
-      this.player.x = previousX;
-      this.player.z = previousZ;
-
-      this.player.velocity.x = 0;
-      this.player.velocity.z = 0;
-      break;
-    }
-
-    if (wasInside && !isInside) {
-      this.player.x = previousX;
-      this.player.z = previousZ;
-
-      this.player.velocity.x = 0;
-      this.player.velocity.z = 0;
-      break;
-    }
+    this.view.setCamera(this.player, bob);
   }
-}
-  
-  
+
   updateEnemies(dt, time) {
     let closest = 999;
 
@@ -1045,14 +1235,13 @@ resolveBuildingCollisions(previousX, previousZ) {
       }
 
       const distance = enemy.update(
-  this.player,
-  dt,
-  time,
-  index,
-  this.view.config.enemySpeed,
-  this.view.obstacles || [],
-  this.view.buildings || []
-);
+        this.player,
+        dt,
+        time,
+        index,
+        this.view.config.enemySpeed
+      );
+
       closest = Math.min(closest, distance);
 
       if (distance < this.view.config.enemyMinDistance) {
@@ -1060,12 +1249,19 @@ resolveBuildingCollisions(previousX, previousZ) {
       }
     });
 
-    this.$("distance").textContent =
-      "THREAT: " +
-      (closest > 100 ? "--" : closest.toFixed(1)) +
-      " m";
+    const distanceLabel = this.$("distance");
+    const warning = this.$("warning");
 
-    this.$("warning").style.opacity = closest < 13 ? 1 : 0;
+    if (distanceLabel) {
+      distanceLabel.textContent =
+        "THREAT: " +
+        (closest > 100 ? "--" : closest.toFixed(1)) +
+        " m";
+    }
+
+    if (warning) {
+      warning.style.opacity = closest < 13 ? 1 : 0;
+    }
 
     this.updateAudio(closest);
     this.updateEnemySounds();
@@ -1101,7 +1297,11 @@ resolveBuildingCollisions(previousX, previousZ) {
     const best = this.score.finish();
     this.saveDAO.saveBest(best);
 
-    this.$("caught").style.display = "flex";
+    const caught = this.$("caught");
+
+    if (caught) {
+      caught.style.display = "flex";
+    }
 
     this.sound(48, 0.7, 0.3, "sawtooth");
   }
@@ -1111,29 +1311,48 @@ resolveBuildingCollisions(previousX, previousZ) {
     this.setupCameraControls();
     this.setupActionButtons();
 
-    this.$("start").addEventListener("click", event => {
-      this.startGame(event);
-    });
+    const start = this.$("start");
+    const pause = this.$("pauseBtn");
+    const resume = this.$("resumeBtn");
+    const restart = this.$("restartBtn");
+    const retry = this.$("retry");
+    const music = this.$("musicToggle");
 
-    this.$("pauseBtn").addEventListener("click", () => {
-      this.pauseGame();
-    });
+    if (start) {
+      start.addEventListener("click", event => {
+        this.startGame(event);
+      });
+    }
 
-    this.$("resumeBtn").addEventListener("click", () => {
-      this.resumeGame();
-    });
+    if (pause) {
+      pause.addEventListener("click", () => {
+        this.pauseGame();
+      });
+    }
 
-    this.$("restartBtn").addEventListener("click", () => {
-      this.restartGame();
-    });
+    if (resume) {
+      resume.addEventListener("click", () => {
+        this.resumeGame();
+      });
+    }
 
-    this.$("retry").addEventListener("click", () => {
-      this.restartGame();
-    });
+    if (restart) {
+      restart.addEventListener("click", () => {
+        this.restartGame();
+      });
+    }
 
-    this.$("musicToggle").addEventListener("click", () => {
-      this.toggleMusic();
-    });
+    if (retry) {
+      retry.addEventListener("click", () => {
+        this.restartGame();
+      });
+    }
+
+    if (music) {
+      music.addEventListener("click", () => {
+        this.toggleMusic();
+      });
+    }
   }
 
   update(dt, time) {
@@ -1146,8 +1365,14 @@ resolveBuildingCollisions(previousX, previousZ) {
     this.updateObstacles();
     this.updateWeapon(dt);
 
-    this.$("stamina").textContent =
-      "STAMINA " + Math.round(this.player.stamina) + "%";
+    const stamina = this.$("stamina");
+
+    if (stamina) {
+      stamina.textContent =
+        "STAMINA " + Math.round(this.player.stamina) + "%";
+    }
   }
-      }
-      
+                              }
+  
+  
+  
