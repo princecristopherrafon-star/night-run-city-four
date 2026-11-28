@@ -337,22 +337,21 @@ const upperY = 4;
     group, w / 2, h / 2, 0,
     t, h, d, wall
   );
+// LARGE INDUSTRIAL LOADING ENTRANCE
+this.addBox(
+  group, -7.5, h / 2, d / 2,
+  7, h, t, wall
+);
 
-  // FRONT WALL - OPEN ENTRANCE
-  this.addBox(
-    group, -4.5, h / 2, d / 2,
-    5, h, t, wall
-  );
+this.addBox(
+  group, 7.5, h / 2, d / 2,
+  7, h, t, wall
+);
 
-  this.addBox(
-    group, 4.5, h / 2, d / 2,
-    5, h, t, wall
-  );
-
-  this.addBox(
-    group, 0, h - 0.35, d / 2,
-    4, 0.7, t, wall
-  );
+this.addBox(
+  group, 0, h - 0.35, d / 2,
+  8, 0.7, t, wall
+);
 
   // SECOND FLOOR - LEFT PLATFORM
   this.addBox(
