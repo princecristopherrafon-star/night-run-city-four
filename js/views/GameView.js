@@ -732,6 +732,6 @@ createEnterableBuilding(name, x, z, color, accent, type) {
 
     this.renderer.render(this.scene, this.camera);
   }
-      
+}      
 
         
