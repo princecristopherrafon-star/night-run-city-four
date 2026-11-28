@@ -178,5 +178,4 @@ export default class Enemy {
 
     return distance;
   }
-      }
-    
+}
