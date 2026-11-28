@@ -366,6 +366,36 @@ group.userData = {
     group.add(light);
 
     group.position.set(x, 0, z);
+    // INVISIBLE WALL COLLIDERS
+const addWallCollider = (localX, localZ, width, depth) => {
+  this.buildings.push({
+    position: {
+      x: x + localX,
+      z: z + localZ
+    },
+    userData: {
+      width,
+      depth,
+      solid: true
+    },
+    visible: true
+  });
+};
+
+// Back wall
+addWallCollider(0, -d / 2, w, t);
+
+// Left wall
+addWallCollider(-w / 2, 0, t, d);
+
+// Right wall
+addWallCollider(w / 2, 0, t, d);
+
+// Front wall - left side
+addWallCollider(-4.5, d / 2, 5, t);
+
+// Front wall - right side
+addWallCollider(4.5, d / 2, 5, t);
 
     
 group.userData = {
