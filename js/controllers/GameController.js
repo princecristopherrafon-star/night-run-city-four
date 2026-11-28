@@ -1,3 +1,5 @@
+import Weapon from "../models/Weapon.js";
+
 
 export default class GameController {
   constructor(THREE, view, player, score, saveDAO) {
@@ -25,8 +27,16 @@ export default class GameController {
     this.enemyAudio = [];
 
     this.toastTimer = null;
-
     this.clock = null;
+
+    this.weapons = {};
+    this.currentWeapon = null;
+    this.pickupObjects = [];
+    this.nearbyPickup = null;
+    this.shootHeld = false;
+    this.fireCooldown = 0;
+    this.raycaster = new THREE.Raycaster();
+    this.muzzleTimer = 0;
 
     this.$ = id => document.getElementById(id);
   }
@@ -37,6 +47,10 @@ export default class GameController {
 
   setReady(value) {
     this.ready = value;
+    if (value) {
+      this.createPickups();
+      this.updateWeaponHud();
+    }
   }
 
   toast(message) {
@@ -212,6 +226,49 @@ export default class GameController {
     if (!this.enemyAudio.length) return;
 
     this.view.enemies.forEach((enemy, index) => {
+      if (enemy.active === false) {
+        const deadAudio = this.enemyAudio[index];
+        if (deadAudio) {
+          deadAudio.pause();
+          deadAudio.volume = 0;
+        }
+        return;
+      }
+
+      const distance = Math.hypot(
+        this.player.x - enemy.group.position.x,
+        this.player.z - enemy.group.position.z
+      );
+
+      const volume = this.THREE.MathUtils.clamp(
+        1 - distance / 35,
+        0,
+        1
+      );
+
+      const audio = this.enemyAudio[index];
+
+      if (audio) {
+        audio.volume = volume * 0.7;
+
+        if (this.playing && !this.paused && audio.paused) {
+          audio.play().catch(() => {});
+        }
+      }
+    });
+             }
+    updateEnemySounds() {
+    if (!this.enemyAudio.length) return;
+
+    this.view.enemies.forEach((enemy, index) => {
+      if (enemy.active === false) {
+        const deadAudio = this.enemyAudio[index];
+        if (deadAudio) {
+          deadAudio.pause();
+          deadAudio.volume = 0;
+        }
+        return;
+      }
       const distance = Math.hypot(
         this.player.x - enemy.group.position.x,
         this.player.z - enemy.group.position.z
@@ -238,8 +295,322 @@ export default class GameController {
         audio.pause();
       }
     });
+    }
+  
+  createPickups() {
+    if (!this.view.scene || this.pickupObjects.length) return;
+
+    const THREE = this.THREE;
+
+    const addPickup = (kind, type, x, z, color, label) => {
+      const group = new THREE.Group();
+
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(
+          kind === "weapon" ? 0.95 : 0.8,
+          kind === "weapon" ? 0.28 : 0.65,
+          kind === "weapon" ? 0.28 : 0.8
+        ),
+        new THREE.MeshLambertMaterial({ color })
+      );
+
+      body.position.y = 0.55;
+      group.add(body);
+
+      const glow = new THREE.Mesh(
+        new THREE.TorusGeometry(0.78, 0.055, 6, 18),
+        new THREE.MeshBasicMaterial({ color })
+      );
+
+      glow.rotation.x = Math.PI / 2;
+      glow.position.y = 0.08;
+      group.add(glow);
+
+      const light = new THREE.PointLight(color, 0.65, 5);
+      light.position.y = 1;
+      group.add(light);
+
+      group.position.set(x, 0, z);
+      group.userData = { kind, type, label, baseY: 0 };
+
+      this.view.scene.add(group);
+      this.pickupObjects.push(group);
+    };
+
+    // Weapon locations
+    addPickup("weapon", "pistol", -23, -8, 0x45f4d0, "PISTOL");
+    addPickup("weapon", "rifle", 23, -8, 0xffd84a, "RIFLE");
+    addPickup("weapon", "shotgun", -23, 28, 0xff4564, "SHOTGUN");
+
+    // Ammo stations
+    addPickup("ammo", "ammo", -58, -35, 0x62ff91, "AMMO");
+    addPickup("ammo", "ammo", 0, 22, 0x62ff91, "AMMO");
+    addPickup("ammo", "ammo", -28, 58, 0x62ff91, "AMMO");
+
+    this.view.pickups = this.pickupObjects;
   }
 
+  updateWeaponHud() {
+    const name = this.$("weaponName");
+    const ammo = this.$("weaponAmmo");
+    const shoot = this.$("shootBtn");
+
+    if (name) {
+      name.textContent = this.currentWeapon
+        ? this.currentWeapon.name
+        : "NO WEAPON";
+    }
+
+    if (ammo) {
+      ammo.textContent = this.currentWeapon
+        ? "AMMO " + this.currentWeapon.ammo
+        : "AMMO --";
+    }
+
+    if (shoot) {
+      shoot.style.display = this.currentWeapon ? "block" : "none";
+    }
+  }
+
+  checkPickupRange() {
+    let nearest = null;
+    let nearestDistance = 2.7;
+
+    for (const pickup of this.pickupObjects) {
+      if (!pickup.visible) continue;
+
+      const distance = Math.hypot(
+        this.player.x - pickup.position.x,
+        this.player.z - pickup.position.z
+      );
+
+      if (distance < nearestDistance) {
+        nearest = pickup;
+        nearestDistance = distance;
+      }
+    }
+
+    this.nearbyPickup = nearest;
+
+    const button = this.$("pickupBtn");
+
+    if (button) {
+      if (nearest && this.playing && !this.paused) {
+        button.style.display = "block";
+        button.textContent =
+          nearest.userData.kind === "weapon"
+            ? "PICK UP " + nearest.userData.label
+            : "PICK UP AMMO";
+      } else {
+        button.style.display = "none";
+      }
+    }
+  }
+
+  collectPickup() {
+    const pickup = this.nearbyPickup;
+
+    if (!pickup || !pickup.visible) return;
+
+    const data = pickup.userData;
+
+    if (data.kind === "weapon") {
+      this.currentWeapon = new Weapon(data.type);
+      this.weapons[data.type] = this.currentWeapon;
+
+      this.toast(data.label + " EQUIPPED");
+      this.sound(620, 0.12, 0.13, "square");
+
+    } else {
+      if (!this.currentWeapon) {
+        this.toast("FIND A WEAPON FIRST");
+        return;
+      }
+
+      const amount =
+        this.currentWeapon.type === "rifle" ? 30 :
+        this.currentWeapon.type === "shotgun" ? 6 : 12;
+
+      this.currentWeapon.addAmmo(amount);
+
+      this.toast("+" + amount + " AMMO");
+      this.sound(780, 0.1, 0.12, "sine");
+    }
+
+    pickup.visible = false;
+    this.nearbyPickup = null;
+
+    this.updateWeaponHud();
+    this.checkPickupRange();
+  }
+
+  showMuzzleFlash() {
+    const flash = this.$("weaponFlash");
+    if (!flash) return;
+
+    flash.style.opacity = "1";
+    flash.style.transform = "scale(1)";
+
+    clearTimeout(this.muzzleTimer);
+
+    this.muzzleTimer = setTimeout(() => {
+      flash.style.opacity = "0";
+      flash.style.transform = "scale(0.45)";
+    }, 65);
+  }
+
+  fireWeapon() {
+    const weapon = this.currentWeapon;
+
+    if (!weapon || !this.playing || this.paused || this.gameOver) {
+      return;
+    }
+
+    if (!weapon.consume()) {
+      this.toast("OUT OF AMMO — FIND AMMO BOXES");
+      this.updateWeaponHud();
+      this.shootHeld = false;
+      return;
+    }
+
+    this.fireCooldown = weapon.fireRate;
+    this.showMuzzleFlash();
+
+    this.sound(
+      weapon.type === "shotgun" ? 82 :
+      weapon.type === "rifle" ? 125 : 175,
+      weapon.type === "shotgun" ? 0.24 : 0.09,
+      weapon.type === "shotgun" ? 0.26 : 0.13,
+      "sawtooth"
+    );
+
+    const camera = this.view.camera;
+    camera.updateMatrixWorld(true);
+
+    const origin = camera.getWorldPosition(
+      new this.THREE.Vector3()
+    );
+
+    const forward = camera.getWorldDirection(
+      new this.THREE.Vector3()
+    );
+
+    const right = new this.THREE.Vector3()
+      .crossVectors(forward, camera.up)
+      .normalize();
+
+    const up = new this.THREE.Vector3()
+      .crossVectors(right, forward)
+      .normalize();
+
+    const hitCounts = new Map();
+    const rayCount = weapon.pellets;
+
+    for (let i = 0; i < rayCount; i++) {
+      const direction = forward.clone();
+
+      if (rayCount > 1) {
+        direction.addScaledVector(
+          right,
+          (Math.random() - 0.5) * weapon.spread
+        );
+
+        direction.addScaledVector(
+          up,
+          (Math.random() - 0.5) * weapon.spread
+        );
+
+        direction.normalize();
+      }
+
+      this.raycaster.set(origin, direction);
+      this.raycaster.far = weapon.range;
+
+      let nearestEnemy = null;
+      let nearestDistance = Infinity;
+
+      for (const enemy of this.view.enemies) {
+        if (enemy.active === false || !enemy.group.visible) continue;
+
+        const box = new this.THREE.Box3()
+          .setFromObject(enemy.group);
+
+        const point = new this.THREE.Vector3();
+
+        const intersection =
+          this.raycaster.ray.intersectBox(box, point);
+
+        if (intersection) {
+          const distance = origin.distanceTo(point);
+
+          if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearestEnemy = enemy;
+          }
+        }
+      }
+
+      if (nearestEnemy) {
+        hitCounts.set(
+          nearestEnemy,
+          (hitCounts.get(nearestEnemy) || 0) + 1
+        );
+      }
+    }
+
+    for (const [enemy, pelletHits] of hitCounts) {
+      const damage =
+        weapon.damage *
+        (weapon.type === "shotgun" ? pelletHits : 1);
+
+      enemy.health = Math.max(
+        0,
+        (enemy.health ?? 100) - damage
+      );
+
+      enemy.group.userData.hitFlash = 0.18;
+
+      if (enemy.health <= 0) {
+        enemy.active = false;
+        enemy.deadUntil = performance.now() + 4500;
+        enemy.group.visible = false;
+        this.toast("TARGET ELIMINATED");
+      }
+    }
+
+    this.updateWeaponHud();
+  }
+
+  updateWeapon(dt) {
+    this.fireCooldown = Math.max(
+      0,
+      this.fireCooldown - dt
+    );
+
+    if (
+      this.shootHeld &&
+      this.currentWeapon &&
+      this.fireCooldown <= 0
+    ) {
+      this.fireWeapon();
+    }
+
+    this.checkPickupRange();
+
+    for (const pickup of this.pickupObjects) {
+      if (pickup.visible) {
+        pickup.rotation.y += dt * 1.1;
+
+        pickup.position.y =
+          0.08 +
+          Math.sin(
+            performance.now() * 0.003 + pickup.position.x
+          ) * 0.08;
+      }
+    }
+  }
+  
+  
   resetGame() {
     if (!this.ready) {
       throw new Error("The 3D city is not ready yet.");
@@ -257,6 +628,24 @@ export default class GameController {
     this.score.reset();
 
     this.view.resetWorld();
+
+    this.currentWeapon = null;
+    this.weapons = {};
+    this.shootHeld = false;
+    this.fireCooldown = 0;
+
+    this.pickupObjects.forEach(pickup => {
+      pickup.visible = true;
+    });
+
+    this.view.enemies.forEach(enemy => {
+      enemy.health = 100;
+      enemy.active = true;
+      enemy.deadUntil = 0;
+      enemy.group.visible = true;
+    });
+
+    this.updateWeaponHud();
 
     this.$("stick").style.transform = "translate(0px,0px)";
     this.$("caught").style.display = "none";
@@ -403,8 +792,36 @@ export default class GameController {
         this.player.jump((...args) => this.sound(...args));
       }
     });
-  }
 
+    this.$("pickupBtn").addEventListener("pointerdown", event => {
+      event.preventDefault();
+
+      if (this.playing && !this.paused) {
+        this.collectPickup();
+      }
+    });
+
+    const shootButton = this.$("shootBtn");
+
+    shootButton.addEventListener("pointerdown", event => {
+      event.preventDefault();
+
+      if (!this.playing || this.paused) return;
+
+      this.shootHeld = true;
+
+      if (this.fireCooldown <= 0) {
+        this.fireWeapon();
+      }
+    });
+
+    ["pointerup", "pointercancel", "pointerleave"].forEach(type => {
+      shootButton.addEventListener(type, () => {
+        this.shootHeld = false;
+      });
+    });
+      }
+        
   startGame(event) {
     if (event) event.preventDefault();
 
@@ -449,6 +866,7 @@ export default class GameController {
     this.paused = true;
     this.playing = false;
     this.sprintHeld = false;
+    this.shootHeld = false;
 
     this.pauseAudio();
 
@@ -526,6 +944,17 @@ export default class GameController {
     let closest = 999;
 
     this.view.enemies.forEach((enemy, index) => {
+      if (enemy.active === false) {
+        if (performance.now() >= (enemy.deadUntil || 0)) {
+          enemy.active = true;
+          enemy.health = 100;
+          enemy.group.visible = true;
+          enemy.reset(index);
+        } else {
+          return;
+        }
+      }
+
       const distance = enemy.update(
         this.player,
         dt,
@@ -572,6 +1001,7 @@ export default class GameController {
     this.gameOver = true;
     this.playing = false;
     this.sprintHeld = false;
+    this.shootHeld = false;
 
     this.joystick.x = 0;
     this.joystick.y = 0;
@@ -624,9 +1054,10 @@ export default class GameController {
     this.updateMovement(dt);
     this.updateEnemies(dt, time);
     this.updateObstacles();
+    this.updateWeapon(dt);
 
     this.$("stamina").textContent =
       "STAMINA " + Math.round(this.player.stamina) + "%";
   }
       }
-          
+      
