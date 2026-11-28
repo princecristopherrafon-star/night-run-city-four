@@ -1332,9 +1332,8 @@ export default class GameController {
         data.width / 2 + 0.35,
         data.depth / 2 + 0.35
       );
-    }
-        }
-  
+     }
+  }
 
   endGame() {
     if (this.gameOver) return;
