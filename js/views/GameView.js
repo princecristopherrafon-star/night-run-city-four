@@ -355,13 +355,36 @@ export default class GameView {
 
     group.position.set(x, 0, z);
 
-    group.userData = {
-      name,
-      enterable: true,
-      doorWidth: 4,
-      width: w,
-      depth: d
-    };
+    
+group.userData = {
+  name,
+  enterable: true,
+
+  width: w,
+  height: h,
+  depth: d,
+
+  doorWidth: 4,
+
+  entrance: {
+    x: 0,
+    z: d / 2,
+    width: 4
+  },
+
+  bounds: {
+    minX: -w / 2,
+    maxX: w / 2,
+    minZ: -d / 2,
+    maxZ: d / 2
+  },
+
+  worldX: x,
+  worldZ: z,
+
+  occupied: false
+};
+    
 
     this.scene.add(group);
     this.buildings.push(group);
@@ -441,9 +464,17 @@ export default class GameView {
     this.scene.add(ground);
 
     // Open street grid
-    const roadMat = this.mat(0x292b48);
+    
+    // EXPANDED CITY ROAD NETWORK
+    const roadMat = this.mat(0x20243a);
+    const roadGlow = this.basic(0x43dfff);
+    const pinkGlow = this.basic(0xff55cf);
 
-    for (const x of [-36, 0, 36]) {
+    const verticalRoads = [-72, -36, 0, 36, 72];
+    const horizontalRoads = [-120, -80, -40, 0, 40, 80, 120];
+
+    // Main vertical streets
+    for (const x of verticalRoads) {
       const road = new THREE.Mesh(
         new THREE.PlaneGeometry(13, 1000),
         roadMat
@@ -452,60 +483,121 @@ export default class GameView {
       road.rotation.x = -Math.PI / 2;
       road.position.set(x, 0.018, 0);
       this.scene.add(road);
+
+      // Neon road edges
+      for (const side of [-1, 1]) {
+        this.addBox(
+          this.scene,
+          x + side * 6.9,
+          0.04,
+          0,
+          0.12,
+          0.025,
+          1000,
+          roadGlow
+        );
+      }
+
+      // Sidewalks
+      for (const side of [-1, 1]) {
+        const sidewalk = new THREE.Mesh(
+          new THREE.BoxGeometry(4, 0.18, 1000),
+          this.mat(0x474365)
+        );
+
+        sidewalk.position.set(
+          x + side * 10.5,
+          0.09,
+          0
+        );
+
+        this.scene.add(sidewalk);
+      }
+
+      // Dashed center markings
+      for (let z = -480; z <= 480; z += 12) {
+        this.addBox(
+          this.scene,
+          x,
+          0.045,
+          z,
+          0.14,
+          0.025,
+          4.5,
+          this.basic(0xffd84a)
+        );
+      }
     }
 
-    for (const z of [-36, 0, 36]) {
+    // Main horizontal streets
+    for (const z of horizontalRoads) {
       const road = new THREE.Mesh(
         new THREE.PlaneGeometry(1000, 13),
         roadMat
       );
 
       road.rotation.x = -Math.PI / 2;
-      road.position.set(0, 0.02, z);
+      road.position.set(0, 0.025, z);
       this.scene.add(road);
+
+      // Neon road edges
+      for (const side of [-1, 1]) {
+        this.addBox(
+          this.scene,
+          0,
+          0.045,
+          z + side * 6.9,
+          1000,
+          0.025,
+          0.12,
+          pinkGlow
+        );
+      }
+
+      // Dashed center markings
+      for (let x = -480; x <= 480; x += 12) {
+        this.addBox(
+          this.scene,
+          x,
+          0.05,
+          z,
+          4.5,
+          0.025,
+          0.14,
+          this.basic(0xffd84a)
+        );
+      }
     }
 
-    // Neon road markings
-    for (let z = -480; z <= 480; z += 12) {
-      this.addBox(
-        this.scene, -6.9, 0.035, z,
-        0.12, 0.025, 4.8,
-        this.basic(0x43dfff)
-      );
+    // Intersection crosswalks
+    for (const x of verticalRoads) {
+      for (const z of horizontalRoads) {
+        for (let stripe = -3; stripe <= 3; stripe++) {
+          this.addBox(
+            this.scene,
+            x + stripe * 1.7,
+            0.055,
+            z - 5.2,
+            0.9,
+            0.025,
+            2.2,
+            this.basic(0xd8eaff)
+          );
 
-      this.addBox(
-        this.scene, 6.9, 0.035, z,
-        0.12, 0.025, 4.8,
-        this.basic(0x43dfff)
-      );
-    }
-
-    for (let x = -480; x <= 480; x += 12) {
-      this.addBox(
-        this.scene, x, 0.04, -6.9,
-        4.8, 0.025, 0.12,
-        this.basic(0xff55cf)
-      );
-
-      this.addBox(
-        this.scene, x, 0.04, 6.9,
-        4.8, 0.025, 0.12,
-        this.basic(0xff55cf)
-      );
-    }
-
-    // Sidewalks
-    for (const x of [-11, 11]) {
-      const sidewalk = new THREE.Mesh(
-        new THREE.BoxGeometry(4, 0.18, 1000),
-        this.mat(0x474365)
-      );
-
-      sidewalk.position.set(x, 0.09, 0);
-      this.scene.add(sidewalk);
-    }
-
-    // Six enterable buildings
+          this.addBox(
+            this.scene,
+            x + stripe * 1.7,
+            0.055,
+            z + 5.2,
+            0.9,
+            0.025,
+            2.2,
+            this.basic(0xd8eaff)
+          );
+        }
+      }
+          }
+    
     this.createEnterableBuilding(
       "ROBLOX MART", -23, -12,
       0x236a68, 0x43f4ce, "mart"
