@@ -957,12 +957,13 @@ addWallCollider(8.5, d / 2, 7, t);
 
   resetWorld() {
     // Reset enemies
-    for (const enemy of this.enemies) {
-      if (enemy && typeof enemy.reset === "function") {
-        enemy.reset();
-      }
-    }
-
+    
+this.enemies.forEach((enemy, index) => {
+  if (enemy && typeof enemy.reset === "function") {
+    enemy.reset(index);
+  }
+});
+    
     // Reset player-related world objects
     for (const pickup of this.pickups) {
       if (pickup && pickup.parent) {
