@@ -64,36 +64,35 @@ export default class Player {
         this.stamina + 13 * dt
       );
     }
-    
+
 // CAMERA-RELATIVE MOVEMENT
 const forwardX = Math.sin(this.yaw);
 const forwardZ = -Math.cos(this.yaw);
 
-// Corrected horizontal direction
-const rightX = -Math.cos(this.yaw);
-const rightZ = -Math.sin(this.yaw);
+const rightX = Math.cos(this.yaw);
+const rightZ = Math.sin(this.yaw);
 
 let desiredX =
-  forwardX * -joystick.y +
+  forwardX * -joystick.y -
   rightX * joystick.x;
 
 let desiredZ =
-  forwardZ * -joystick.y +
+  forwardZ * -joystick.y -
   rightZ * joystick.x;
+
+const length = Math.hypot(
+  desiredX,
+  desiredZ
+);
+
+if (length > 1) {
+  desiredX /= length;
+  desiredZ /= length;
+}
+
+desiredX *= speed;
+desiredZ *= speed;
     
-
-    const length = Math.hypot(
-      desiredX,
-      desiredZ
-    );
-
-    if (length > 1) {
-      desiredX /= length;
-      desiredZ /= length;
-    }
-
-    desiredX *= speed;
-    desiredZ *= speed;
 
     // SMOOTH ACCELERATION
     const acceleration =
