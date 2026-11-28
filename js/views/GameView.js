@@ -166,11 +166,7 @@ getGroundHeight(x, z, currentHeight = 0) {
   return mesh;
   }
 
-    mesh.position.set(x, y, z);
-    parent.add(mesh);
-
-    return mesh;
-  }
+    
 
   addNeon(parent, x, y, z, w, h, d, color) {
     return this.addBox(
