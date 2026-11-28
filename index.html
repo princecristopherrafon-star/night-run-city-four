@@ -6,6 +6,10 @@
 <meta name="theme-color" content="#080d13">
 <meta name="description" content="NIGHT RUN: CITY OF FOUR — survive the hunt">
 <title>NIGHT RUN: CITY OF FOUR</title>
+  <link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#080d13">
 <style>
 :root{--cyan:#7cecff;--red:#ff365d;--glass:rgba(5,12,20,.82);--safeB:env(safe-area-inset-bottom,0px);--safeT:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#05090e;color:#eef8ff;font-family:Arial,sans-serif;touch-action:none}button{font:inherit;cursor:pointer}#game{position:fixed;inset:0}canvas{display:block;width:100%;height:100%;outline:0}#vignette{position:fixed;inset:0;pointer-events:none;z-index:3;background:radial-gradient(ellipse at center,transparent 27%,#0008 78%,#000e 100%);transition:background .25s}#grain{position:fixed;inset:0;pointer-events:none;z-index:4;opacity:.045;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E")}
@@ -81,6 +85,11 @@ $("start").addEventListener("click",()=>{initAudio();resetGame();$("menu").style
 $("musicToggle").addEventListener("click",()=>{musicOn=!musicOn;$("musicToggle").textContent="BACKGROUND MUSIC: "+(musicOn?"ON":"OFF");if(musicOn){if(playing)playAudio()}else{pauseAudio();if(masterGain&&audioContext)masterGain.gain.setTargetAtTime(0,audioContext.currentTime,.1)}});
 function animate(){requestAnimationFrame(animate);if(!clock)return;const dt=Math.min(clock.getDelta(),.035),time=clock.elapsedTime;if(playing&&!paused&&!gameOver){elapsed+=dt;updateMovement(dt);updateEnemies(dt,time);updateObstacles(dt);updateQuests(dt,time);$("stamina").textContent="STAMINA "+Math.round(stamina)+"%";if(playerLight)playerLight.intensity=.36+Math.sin(time*2.1)*.06}renderer.render(scene,camera)}
 try{init();animate()}catch(error){console.error("NIGHT RUN initialization failed:",error);toast("GAME INITIALIZATION ERROR")}
+</script>
+  <script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
 </script>
 </body>
 </html>
