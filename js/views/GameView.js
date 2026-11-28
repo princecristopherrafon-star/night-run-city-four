@@ -222,15 +222,16 @@ group.userData = {
   solid: true
 };
 
-this.scene.add(group);
-this.buildings.push(group);
+    this.scene.add(group);
+    this.buildings.push(group);
 
-return group;
+    return group;
+  }
 
   createEnterableBuilding(name, x, z, color, accent, type) {
     const THREE = this.THREE;
     const group = new THREE.Group();
-
+   
     const w = 14, h = 7, d = 12, t = 0.45;
     const wall = this.mat(color);
 
