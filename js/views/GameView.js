@@ -1,3 +1,4 @@
+
 import Enemy from "../models/Enemy.js";
 
 function rand(a, b) {
@@ -71,7 +72,8 @@ export default class GameView {
     document.getElementById("game").appendChild(
       this.renderer.domElement
     );
-        this.textureLoader = new THREE.TextureLoader();
+
+    this.textureLoader = new THREE.TextureLoader();
 
     this.resizeRenderer();
 
@@ -125,36 +127,53 @@ export default class GameView {
       new this.THREE.BoxGeometry(w, h, d),
       material
     );
+
     mesh.position.set(x, y, z);
     parent.add(mesh);
+
     return mesh;
   }
 
   addNeon(parent, x, y, z, w, h, d, color) {
     return this.addBox(
-      parent, x, y, z, w, h, d,
+      parent,
+      x,
+      y,
+      z,
+      w,
+      h,
+      d,
       this.basic(color)
     );
   }
 
   createBuilding(x, z, width, height, depth) {
-    // Lightweight decorative skyline block with bright randomized windows.
     const THREE = this.THREE;
     const group = new THREE.Group();
 
     const shells = [
-      0x29275a, 0x263c65, 0x512d67,
-      0x24566a, 0x65405c
+      0x29275a,
+      0x263c65,
+      0x512d67,
+      0x24566a,
+      0x65405c
     ];
 
     const windows = [
-      0xffd85c, 0x5cecff,
-      0xff75d8, 0xb5ff75
+      0xffd85c,
+      0x5cecff,
+      0xff75d8,
+      0xb5ff75
     ];
 
     this.addBox(
-      group, 0, height / 2, 0,
-      width, height, depth,
+      group,
+      0,
+      height / 2,
+      0,
+      width,
+      height,
+      depth,
       this.mat(shells[Math.floor(Math.random() * shells.length)])
     );
 
@@ -168,7 +187,9 @@ export default class GameView {
 
         const win = new THREE.Mesh(
           new THREE.PlaneGeometry(1.05, 1.35),
-          this.basic(windows[Math.floor(Math.random() * windows.length)])
+          this.basic(
+            windows[Math.floor(Math.random() * windows.length)]
+          )
         );
 
         win.position.set(xx, y, depth / 2 + 0.012);
@@ -177,8 +198,13 @@ export default class GameView {
     }
 
     this.addNeon(
-      group, 0, height - 0.25, depth / 2 + 0.04,
-      width * 0.82, 0.18, 0.12,
+      group,
+      0,
+      height - 0.25,
+      depth / 2 + 0.04,
+      width * 0.82,
+      0.18,
+      0.12,
       0x43eaff
     );
 
@@ -187,8 +213,10 @@ export default class GameView {
     this.buildings.push(group);
 
     return group;
-  }
-    createEnterableBuilding(name, x, z, color, accent, type) {
+                               }
+
+
+  createEnterableBuilding(name, x, z, color, accent, type) {
     const THREE = this.THREE;
     const group = new THREE.Group();
 
@@ -199,15 +227,15 @@ export default class GameView {
       type === "hospital" ? 0xe7edfa :
       type === "school" ? 0xe5b84e :
       type === "arcade" ? 0x49316d :
-      type === "mart" ? 0x4c987d :
-      0x986b4e
+      type === "mart" ? 0x4c987d : 0x986b4e
     );
 
-    // Back and side walls plus a front wall split around a 4m open doorway.
+    // Floor and walls with an open entrance.
     this.addBox(group, 0, -0.12, 0, w, 0.24, d, this.mat(0x55516d));
     this.addBox(group, 0, h / 2, -d / 2, w, h, t, wall);
     this.addBox(group, -w / 2, h / 2, 0, t, h, d, wall);
     this.addBox(group, w / 2, h / 2, 0, t, h, d, wall);
+
     this.addBox(group, -4.5, h / 2, d / 2, 5, h, t, wall);
     this.addBox(group, 4.5, h / 2, d / 2, 5, h, t, wall);
     this.addBox(group, 0, h - 0.35, d / 2, 4, 0.7, t, wall);
@@ -224,29 +252,25 @@ export default class GameView {
       this.basic(accent)
     );
 
-    // Unique interior layouts by building type.
     if (type === "mart") {
       for (const xx of [-3.5, 0, 3.5]) {
-        this.addBox(
-          group, xx, 1.0, -1.4,
-          1.0, 2.0, 5.5, furniture
-        );
+        this.addBox(group, xx, 1.0, -1.4, 1.0, 2.0, 5.5, furniture);
 
         for (let shelf = 0; shelf < 3; shelf++) {
           this.addBox(
-            group, xx, 0.65 + shelf * 0.55, -1.4,
-            1.08, 0.08, 5.6,
-            this.basic([
-              0xffd84a, 0x5cecff, 0xff79d8
-            ][shelf])
+            group,
+            xx,
+            0.65 + shelf * 0.55,
+            -1.4,
+            1.08,
+            0.08,
+            5.6,
+            this.basic([0xffd84a, 0x5cecff, 0xff79d8][shelf])
           );
         }
       }
 
-      this.addBox(
-        group, 0, 0.65, 4.0,
-        5.2, 1.3, 0.9, furniture
-      );
+      this.addBox(group, 0, 0.65, 4.0, 5.2, 1.3, 0.9, furniture);
 
     } else if (type === "school") {
       for (let row = 0; row < 2; row++) {
@@ -283,10 +307,7 @@ export default class GameView {
         );
       }
 
-      this.addBox(
-        group, 0, 0.55, 3.5,
-        3, 1, 1, furniture
-      );
+      this.addBox(group, 0, 0.55, 3.5, 3, 1, 1, furniture);
 
       this.addNeon(
         group, 0, 3.4, -d / 2 - 0.32,
@@ -312,10 +333,7 @@ export default class GameView {
         );
       }
 
-      this.addBox(
-        group, 0, 0.65, 3.4,
-        5, 1.2, 1.1, furniture
-      );
+      this.addBox(group, 0, 0.65, 3.4, 5, 1.2, 1.1, furniture);
 
     } else {
       for (const xx of [-3, 0, 3]) {
@@ -330,7 +348,8 @@ export default class GameView {
         );
       }
     }
-          const light = new THREE.PointLight(accent, 1.15, 19);
+
+    const light = new THREE.PointLight(accent, 1.15, 19);
     light.position.set(0, 4.2, 0);
     group.add(light);
 
@@ -406,11 +425,10 @@ export default class GameView {
 
     group.position.set(x, 0, z);
     this.scene.add(group);
-  }
-
+                }
+      
   createCity() {
     const THREE = this.THREE;
-
     this.pickups = [];
     this.landmarks = [];
 
@@ -422,7 +440,7 @@ export default class GameView {
     ground.rotation.x = -Math.PI / 2;
     this.scene.add(ground);
 
-    // Open street grid: no enclosing city wall or artificial world boundary.
+    // Open street grid
     const roadMat = this.mat(0x292b48);
 
     for (const x of [-36, 0, 36]) {
@@ -447,7 +465,7 @@ export default class GameView {
       this.scene.add(road);
     }
 
-    // Neon lane-edge markings.
+    // Neon road markings
     for (let z = -480; z <= 480; z += 12) {
       this.addBox(
         this.scene, -6.9, 0.035, z,
@@ -474,8 +492,9 @@ export default class GameView {
         4.8, 0.025, 0.12,
         this.basic(0xff55cf)
       );
-  }
-        // Keep the existing boulevard sidewalks and central orientation.
+    }
+
+    // Sidewalks
     for (const x of [-11, 11]) {
       const sidewalk = new THREE.Mesh(
         new THREE.BoxGeometry(4, 0.18, 1000),
@@ -486,7 +505,7 @@ export default class GameView {
       this.scene.add(sidewalk);
     }
 
-    // Six enterable locations, each with an actual open doorway and furnished interior.
+    // Six enterable buildings
     this.createEnterableBuilding(
       "ROBLOX MART", -23, -12,
       0x236a68, 0x43f4ce, "mart"
@@ -517,27 +536,36 @@ export default class GameView {
       0x294b70, 0x58c9ff, "office"
     );
 
-    // Skyline around the playable core, leaving broad paths between blocks.
+    // Skyline
     for (let z = -115; z < 145; z += 28) {
       this.createBuilding(
-        -82 + rand(-3, 3), z,
-        rand(10, 17), rand(16, 48), rand(10, 17)
+        -82 + rand(-3, 3),
+        z,
+        rand(10, 17),
+        rand(16, 48),
+        rand(10, 17)
       );
 
       this.createBuilding(
-        82 + rand(-3, 3), z,
-        rand(10, 17), rand(16, 52), rand(10, 17)
+        82 + rand(-3, 3),
+        z,
+        rand(10, 17),
+        rand(16, 52),
+        rand(10, 17)
       );
     }
 
     for (let x = -55; x <= 55; x += 22) {
       this.createBuilding(
-        x, -90 + rand(-3, 3),
-        rand(10, 16), rand(15, 42), rand(10, 16)
+        x,
+        -90 + rand(-3, 3),
+        rand(10, 16),
+        rand(15, 42),
+        rand(10, 16)
       );
     }
 
-    // Neon Plaza fountain and benches.
+    // Neon Plaza fountain
     const plaza = new THREE.Group();
 
     this.addBox(
@@ -582,7 +610,7 @@ export default class GameView {
       group: plaza
     });
 
-    // Park trees and benches.
+    // Park trees and benches
     for (const x of [-8, 8]) {
       for (const z of [-8, 8]) {
         this.createTree(x - 58, z - 35);
@@ -601,8 +629,9 @@ export default class GameView {
         0.25, 0.6, 0.25,
         this.mat(0x4c3b39)
       );
-  }
-        // School playground court and goal.
+    }
+
+    // School playground
     this.addBox(
       this.scene, 23, 0.05, -34,
       18, 0.1, 12,
@@ -627,7 +656,7 @@ export default class GameView {
       this.basic(0xffd84a)
     );
 
-    // Parking lot with four low-poly cars.
+    // Parking lot and low-poly cars
     this.addBox(
       this.scene, 62, 0.025, -38,
       24, 0.05, 18,
@@ -635,8 +664,10 @@ export default class GameView {
     );
 
     const carColors = [
-      0xff4d88, 0x42dfff,
-      0xffd34e, 0x8c68ff
+      0xff4d88,
+      0x42dfff,
+      0xffd34e,
+      0x8c68ff
     ];
 
     for (let i = 0; i < 4; i++) {
@@ -668,10 +699,12 @@ export default class GameView {
       this.scene.add(car);
     }
 
-    // Food street with four colorful stalls.
+    // Food street
     const stallColors = [
-      0xff6b45, 0xffd84a,
-      0x4ce5d2, 0xd46aff
+      0xff6b45,
+      0xffd84a,
+      0x4ce5d2,
+      0xd46aff
     ];
 
     for (let i = 0; i < 4; i++) {
@@ -699,7 +732,7 @@ export default class GameView {
       this.scene.add(stall);
     }
 
-    // Sparse bright lamps: inexpensive lighting, no shadows.
+    // Street lamps
     for (let z = -90; z <= 100; z += 24) {
       this.createLamp(-9, z, 0x55eaff);
       this.createLamp(9, z, 0xff69d8);
@@ -724,7 +757,6 @@ export default class GameView {
 
   createObstacles() {
     const THREE = this.THREE;
-
     this.obstacles = [];
 
     for (let i = 0; i < 14; i++) {
@@ -779,4 +811,5 @@ export default class GameView {
 
     this.renderer.render(this.scene, this.camera);
   }
-  }
+      }
+        
