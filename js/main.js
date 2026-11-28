@@ -98,6 +98,7 @@ function startGame() {
     );
 
     controller.setReady(false);
+    alert("NIGHT RUN ERROR: " + error.message);
 
     controller.toast(
       "3D ENGINE ERROR - CHECK INTERNET OR WEBGL"
