@@ -826,85 +826,81 @@ group.userData = {
       this.addBox(
         car, 0, 0.65, 0,
         3.2, 1, 5.2,
-        this.mat(carColors[i])
-      );
 
-      this.addBox(
-        car, 0, 1.35, -0.35,
-        2.4, 0.65, 2.5,
-        this.mat(0x9ad8ed)
-      );
+createCity() {
+  const THREE = this.THREE;
 
-      for (const wx of [-1.25, 1.25]) {
-        for (const wz of [-1.7, 1.7]) {
-          this.addBox(
-            car, wx, 0.38, wz,
-            0.55, 0.65, 0.8,
-            this.mat(0x171827)
-          );
-        }
+  this.pickups = [];
+  this.landmarks = [];
+  this.buildings = [];
+  this.obstacles = [];
+  this.lamps = [];
+  this.floorZones = [];
+
+  // Compact combat arena ground
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(100, 100),
+    this.mat(0x292b35)
+  );
+
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = 0;
+  this.scene.add(ground);
+
+  // Main combat road
+  const road = new THREE.Mesh(
+    new THREE.PlaneGeometry(90, 12),
+    this.mat(0x171a24)
+  );
+
+  road.rotation.x = -Math.PI / 2;
+  road.position.set(0, 0.025, 14);
+  this.scene.add(road);
+
+  // Road markings
+  for (let x = -40; x <= 40; x += 10) {
+    this.addBox(
+      this.scene,
+      x,
+      0.055,
+      14,
+      4,
+      0.025,
+      0.16,
+      this.basic(0xd5c878)
+    );
+  }
+
+  // Two enterable buildings
+  this.createEnterableBuilding(
+    "ABANDONED WAREHOUSE",
+    -18,
+    -8,
+    0x454b55,
+    0xff8b35,
+    "mart"
+  );
+
+  this.createEnterableBuilding(
+    "MILITARY CONTROL BASE",
+    18,
+    -8,
+    0x394b5b,
+    0x42dfff,
+    "office"
+  );
+
+  // Arena lighting
+  const arenaLight = new THREE.PointLight(
+    0x48cfff,
+    1.2,
+    65
+  );
+
+  arenaLight.position.set(0, 12, 12);
+  this.scene.add(arenaLight);
       }
-
-      car.position.set(54 + i * 5, 0, -38);
-      this.scene.add(car);
-    }
-
-    // Food street
-    const stallColors = [
-      0xff6b45,
-      0xffd84a,
-      0x4ce5d2,
-      0xd46aff
-    ];
-
-    for (let i = 0; i < 4; i++) {
-      const stall = new THREE.Group();
-
-      this.addBox(
-        stall, 0, 1, 0,
-        3.5, 1.8, 2.5,
-        this.mat(0x62483e)
-      );
-
-      this.addBox(
-        stall, 0, 2.15, 0,
-        4, 0.35, 3,
-        this.basic(stallColors[i])
-      );
-
-      this.addBox(
-        stall, 0, 1.35, 1.3,
-        3.2, 0.65, 0.25,
-        this.mat(0x9b6545)
-      );
-
-      stall.position.set(-42 + i * 9, 0, 58);
-      this.scene.add(stall);
-    }
-
-    // Street lamps
-    for (let z = -90; z <= 100; z += 24) {
-      this.createLamp(-9, z, 0x55eaff);
-      this.createLamp(9, z, 0xff69d8);
-    }
-  }
-
-  createEnemies() {
-    this.enemies = [];
-
-    for (let i = 0; i < 4; i++) {
-      this.enemies.push(
-        new Enemy(
-          this.THREE,
-          this.scene,
-          this.textureLoader,
-          i,
-          this.portraitPaths
-        )
-      );
-    }
-  }
-
+      
   createObstacles() {
     const THREE = this.THREE;
     this.obstacles = [];
