@@ -7,9 +7,13 @@ export default class Player {
   reset() {
     this.x = 0;
     this.z = 0;
+
+    // Camera height above the current floor
     this.y = 1.7;
+    this.groundY = 0;
 
     this.velocityY = 0;
+
     this.velocity = {
       x: 0,
       z: 0
@@ -24,7 +28,12 @@ export default class Player {
   }
 
   jump(sound) {
-    if (this.y <= 1.705 && !this.jumpActive) {
+    const feet = this.y - 1.7;
+
+    if (
+      feet <= this.groundY + 0.06 &&
+      !this.jumpActive
+    ) {
       this.velocityY = 7.3;
       this.jumpActive = true;
 
@@ -38,7 +47,14 @@ export default class Player {
     return false;
   }
 
-  update(THREE, dt, joystick, sprintHeld, config) {
+  update(
+    THREE,
+    dt,
+    joystick,
+    sprintHeld,
+    config,
+    getGroundHeight = null
+  ) {
     const moving =
       Math.abs(joystick.x) +
       Math.abs(joystick.y) > 0.1;
@@ -66,12 +82,11 @@ export default class Player {
     }
 
     // CAMERA-RELATIVE MOVEMENT
-const forwardX = -Math.sin(this.yaw);
-const forwardZ = -Math.cos(this.yaw);
+    const forwardX = -Math.sin(this.yaw);
+    const forwardZ = -Math.cos(this.yaw);
 
-const rightX = Math.cos(this.yaw);
-const rightZ = -Math.sin(this.yaw);
-    
+    const rightX = Math.cos(this.yaw);
+    const rightZ = -Math.sin(this.yaw);
 
     let desiredX =
       forwardX * -joystick.y +
@@ -113,20 +128,20 @@ const rightZ = -Math.sin(this.yaw);
     this.x += this.velocity.x * dt;
     this.z += this.velocity.z * dt;
 
-    // EXPANDED CITY BOUNDARIES
+    // MAP BOUNDARIES
     const previousX = this.x;
     const previousZ = this.z;
 
     this.x = THREE.MathUtils.clamp(
       this.x,
-      -110,
-      110
+      -55,
+      55
     );
 
     this.z = THREE.MathUtils.clamp(
       this.z,
-      -180,
-      180
+      -65,
+      65
     );
 
     if (this.x !== previousX) {
@@ -137,12 +152,34 @@ const rightZ = -Math.sin(this.yaw);
       this.velocity.z = 0;
     }
 
+    // DETECT CURRENT FLOOR OR RAMP HEIGHT
+    let targetGroundY = 0;
+
+    if (typeof getGroundHeight === "function") {
+      const detectedHeight = getGroundHeight(
+        this.x,
+        this.z
+      );
+
+      if (Number.isFinite(detectedHeight)) {
+        targetGroundY = detectedHeight;
+      }
+    }
+
+    this.groundY = targetGroundY;
+
     // JUMP AND GRAVITY
     this.velocityY -= 19 * dt;
     this.y += this.velocityY * dt;
 
-    if (this.y <= 1.7) {
-      this.y = 1.7;
+    const playerFeet = this.y - 1.7;
+
+    // LAND ON THE CURRENT FLOOR
+    if (
+      this.velocityY <= 0 &&
+      playerFeet <= targetGroundY
+    ) {
+      this.y = targetGroundY + 1.7;
       this.velocityY = 0;
       this.jumpActive = false;
     }
