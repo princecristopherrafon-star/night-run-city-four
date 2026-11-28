@@ -817,90 +817,59 @@ group.userData = {
       0xff4d88,
       0x42dfff,
       0xffd34e,
-      0x8c68ff
-    ];
 
-    for (let i = 0; i < 4; i++) {
-      const car = new THREE.Group();
+  createCity() {
+    const THREE = this.THREE;
 
-      this.addBox(
-        car, 0, 0.65, 0,
-        3.2, 1, 5.2,
+    this.pickups = [];
+    this.landmarks = [];
+    this.buildings = [];
+    this.obstacles = [];
+    this.lamps = [];
+    this.floorZones = [];
 
-createCity() {
-  const THREE = this.THREE;
-
-  this.pickups = [];
-  this.landmarks = [];
-  this.buildings = [];
-  this.obstacles = [];
-  this.lamps = [];
-  this.floorZones = [];
-
-  // Compact combat arena ground
-  const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(100, 100),
-    this.mat(0x292b35)
-  );
-
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.y = 0;
-  this.scene.add(ground);
-
-  // Main combat road
-  const road = new THREE.Mesh(
-    new THREE.PlaneGeometry(90, 12),
-    this.mat(0x171a24)
-  );
-
-  road.rotation.x = -Math.PI / 2;
-  road.position.set(0, 0.025, 14);
-  this.scene.add(road);
-
-  // Road markings
-  for (let x = -40; x <= 40; x += 10) {
-    this.addBox(
-      this.scene,
-      x,
-      0.055,
-      14,
-      4,
-      0.025,
-      0.16,
-      this.basic(0xd5c878)
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(100, 100),
+      this.mat(0x292b35)
     );
-  }
+    ground.rotation.x = -Math.PI / 2;
+    this.scene.add(ground);
 
-  // Two enterable buildings
-  this.createEnterableBuilding(
-    "ABANDONED WAREHOUSE",
-    -18,
-    -8,
-    0x454b55,
-    0xff8b35,
-    "mart"
-  );
+    const road = new THREE.Mesh(
+      new THREE.PlaneGeometry(90, 12),
+      this.mat(0x171a24)
+    );
+    road.rotation.x = -Math.PI / 2;
+    road.position.set(0, 0.025, 14);
+    this.scene.add(road);
 
-  this.createEnterableBuilding(
-    "MILITARY CONTROL BASE",
-    18,
-    -8,
-    0x394b5b,
-    0x42dfff,
-    "office"
-  );
+    for (let x = -40; x <= 40; x += 10) {
+      this.addBox(
+        this.scene, x, 0.055, 14,
+        4, 0.025, 0.16,
+        this.basic(0xd5c878)
+      );
+    }
 
-  // Arena lighting
-  const arenaLight = new THREE.PointLight(
-    0x48cfff,
-    1.2,
-    65
-  );
+    this.createEnterableBuilding(
+      "ABANDONED WAREHOUSE",
+      -18, -8,
+      0x454b55, 0xff8b35, "mart"
+    );
 
-  arenaLight.position.set(0, 12, 12);
-  this.scene.add(arenaLight);
-      }
-      
+    this.createEnterableBuilding(
+      "MILITARY CONTROL BASE",
+      18, -8,
+      0x394b5b, 0x42dfff, "office"
+    );
+
+    const arenaLight = new THREE.PointLight(
+      0x48cfff, 1.2, 65
+    );
+    arenaLight.position.set(0, 12, 12);
+    this.scene.add(arenaLight);
+    }
+    
   createObstacles() {
     const THREE = this.THREE;
     this.obstacles = [];
