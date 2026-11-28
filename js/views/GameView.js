@@ -30,53 +30,48 @@ export default class GameView {
       "./assets/speed.jpg"
     ];
 
-    
-this.config = {
-  height: 900,
-
-  walkSpeed: 10,
-  sprintSpeed: 19,
-
-  acceleration: 22,
-  friction: 11,
-
-  enemySpeed: 6.5,
-  enemyMinDistance: 2,
-  fogDistance: 180
-};
-    
+    this.config = {
+      height: 900,
+      walkSpeed: 10,
+      sprintSpeed: 19,
+      acceleration: 22,
+      friction: 11,
+      enemySpeed: 6.5,
+      enemyMinDistance: 2,
+      fogDistance: 220
+    };
   }
 
   init() {
     const THREE = this.THREE;
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x171638);
-    this.scene.fog = new THREE.FogExp2(0x242044, 0.0045);
+    this.scene.background = new THREE.Color(0x171b46);
+    this.scene.fog = new THREE.Fog(0x25245c, 100, 230);
 
     this.camera = new THREE.PerspectiveCamera(
       76,
       innerWidth / innerHeight,
       0.08,
-      180
+      250
     );
 
     this.camera.position.set(0, 1.7, 0);
     this.camera.rotation.order = "YXZ";
 
     this.renderer = new THREE.WebGLRenderer({
-  antialias: true,
-  powerPreference: "high-performance",
-  alpha: false
-});
+      antialias: true,
+      powerPreference: "high-performance",
+      alpha: false
+    });
 
-this.renderer.setPixelRatio(
-  Math.min(window.devicePixelRatio || 1, 1.5)
-);
+    this.renderer.setPixelRatio(
+      Math.min(window.devicePixelRatio || 1, 1.5)
+    );
 
-this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-this.renderer.toneMappingExposure = 1.0;
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.15;
 
     document.getElementById("game").appendChild(
       this.renderer.domElement
@@ -85,16 +80,19 @@ this.renderer.toneMappingExposure = 1.0;
     this.textureLoader = new THREE.TextureLoader();
 
     this.resizeRenderer();
-
     this.clock = new THREE.Clock();
 
     this.scene.add(
-      new THREE.HemisphereLight(0x9da8ff, 0x34304f, 1.45)
+      new THREE.HemisphereLight(0xc4d9ff, 0x47336e, 1.8)
     );
 
-    const moon = new THREE.DirectionalLight(0xb9baff, 0.75);
-    moon.position.set(-15, 35, -20);
-    this.scene.add(moon);
+    const sun = new THREE.DirectionalLight(0xffd6a1, 1.7);
+    sun.position.set(-35, 55, 25);
+    this.scene.add(sun);
+
+    const fill = new THREE.DirectionalLight(0x53cfff, 0.75);
+    fill.position.set(35, 25, -35);
+    this.scene.add(fill);
 
     this.createCity();
     this.createEnemies();
@@ -103,91 +101,81 @@ this.renderer.toneMappingExposure = 1.0;
     addEventListener("resize", () => this.resizeRenderer());
   }
 
-resizeRenderer() {
-  if (!this.renderer || !this.camera) return;
+  resizeRenderer() {
+    if (!this.renderer || !this.camera) return;
 
-  const width = window.innerWidth;
-  const height = window.innerHeight;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
 
-  this.renderer.setSize(width, height, false);
+    this.renderer.setSize(width, height, false);
 
-  this.renderer.domElement.style.width = "100%";
-  this.renderer.domElement.style.height = "100%";
+    this.renderer.domElement.style.width = "100%";
+    this.renderer.domElement.style.height = "100%";
 
-  this.camera.aspect = width / height;
-  this.camera.updateProjectionMatrix();
-}
-  
-createEnemies() {
-  this.enemies = [];
-
-  for (let i = 0; i < 4; i++) {
-    const enemy = new Enemy(
-      this.THREE,
-      this.scene,
-      this.textureLoader,
-      i,
-      this.portraitPaths
-    );
-
-    this.enemies.push(enemy);
+    this.camera.aspect = width / height;
+    this.camera.updateProjectionMatrix();
   }
-}
-  
 
+  createEnemies() {
+    this.enemies = [];
 
-getGroundHeight(x, z, currentHeight = 0) {
-  // Default ground level
-  let bestHeight = 0;
-  let bestDifference = Infinity;
-
-  for (const floor of this.floorZones) {
-    if (
-      x < floor.minX ||
-      x > floor.maxX ||
-      z < floor.minZ ||
-      z > floor.maxZ
-    ) {
-      continue;
-    }
-
-    // Sloped ramp
-    if (floor.type === "ramp") {
-      const start = floor.startZ;
-      const end = floor.endZ;
-
-      const t = Math.max(
-        0,
-        Math.min(1, (z - start) / (end - start))
+    for (let i = 0; i < 4; i++) {
+      const enemy = new Enemy(
+        this.THREE,
+        this.scene,
+        this.textureLoader,
+        i,
+        this.portraitPaths
       );
 
-      return (
-        floor.startHeight +
-        (floor.endHeight - floor.startHeight) * t
-      );
-    }
-
-    // Upper floor: only select when player is
-    // already close to that floor's height.
-    const difference = Math.abs(
-      floor.height - currentHeight
-    );
-
-    if (
-      difference < bestDifference &&
-      difference < 1.25
-    ) {
-      bestDifference = difference;
-      bestHeight = floor.height;
+      this.enemies.push(enemy);
     }
   }
 
-  return bestHeight;
-}
-  
-  
-  
-  
+  getGroundHeight(x, z, currentHeight = 0) {
+    let bestHeight = 0;
+    let bestDifference = Infinity;
+
+    for (const floor of this.floorZones) {
+      if (
+        x < floor.minX ||
+        x > floor.maxX ||
+        z < floor.minZ ||
+        z > floor.maxZ
+      ) {
+        continue;
+      }
+
+      if (floor.type === "ramp") {
+        const start = floor.startZ;
+        const end = floor.endZ;
+
+        const t = Math.max(
+          0,
+          Math.min(1, (z - start) / (end - start))
+        );
+
+        return (
+          floor.startHeight +
+          (floor.endHeight - floor.startHeight) * t
+        );
+      }
+
+      const difference = Math.abs(
+        floor.height - currentHeight
+      );
+
+      if (
+        difference < bestDifference &&
+        difference < 1.25
+      ) {
+        bestDifference = difference;
+        bestHeight = floor.height;
+      }
+    }
+
+    return bestHeight;
+  }
 
   mat(color) {
     return new this.THREE.MeshLambertMaterial({ color });
@@ -198,18 +186,16 @@ getGroundHeight(x, z, currentHeight = 0) {
   }
 
   addBox(parent, x, y, z, w, h, d, material) {
-  const mesh = new this.THREE.Mesh(
-    new this.THREE.BoxGeometry(w, h, d),
-    material
-  );
+    const mesh = new this.THREE.Mesh(
+      new this.THREE.BoxGeometry(w, h, d),
+      material
+    );
 
-  mesh.position.set(x, y, z);
-  parent.add(mesh);
+    mesh.position.set(x, y, z);
+    parent.add(mesh);
 
-  return mesh;
+    return mesh;
   }
-
-    
 
   addNeon(parent, x, y, z, w, h, d, color) {
     return this.addBox(
@@ -222,77 +208,85 @@ getGroundHeight(x, z, currentHeight = 0) {
       d,
       this.basic(color)
     );
-  }
-
+        }
+  
   createBuilding(x, z, width, height, depth) {
     const THREE = this.THREE;
     const group = new THREE.Group();
 
-    const shells = [
-      0x29275a,
-      0x263c65,
-      0x512d67,
-      0x24566a,
-      0x65405c
-    ];
-
-    const windows = [
-      0xffd85c,
-      0x5cecff,
-      0xff75d8,
-      0xb5ff75
-    ];
+    const wallMat = this.mat(0x303d75);
+    const darkMat = this.mat(0x20264d);
+    const glassMat = new THREE.MeshBasicMaterial({
+      color: 0x56eaff,
+      transparent: true,
+      opacity: 0.72
+    });
 
     this.addBox(
-      group,
-      0,
-      height / 2,
-      0,
-      width,
-      height,
-      depth,
-      this.mat(shells[Math.floor(Math.random() * shells.length)])
+      group, 0, height / 2, 0,
+      width, height, depth,
+      wallMat
     );
 
-    for (let y = 2.2; y < height - 1; y += 3.2) {
-      for (
-        let xx = -width / 2 + 1;
-        xx < width / 2 - 1;
-        xx += 2.4
-      ) {
-        if (Math.random() < 0.24) continue;
-
-        const win = new THREE.Mesh(
-          new THREE.PlaneGeometry(1.05, 1.35),
-          this.basic(
-            windows[Math.floor(Math.random() * windows.length)]
-          )
+    // FRONT GLASS WINDOWS
+    for (let xx = -width / 2 + 1.5; xx < width / 2 - 1; xx += 3) {
+      for (let yy = 2; yy < height - 1; yy += 3) {
+        this.addBox(
+          group, xx, yy, depth / 2 + 0.04,
+          1.7, 1.8, 0.08,
+          glassMat
         );
 
-        win.position.set(xx, y, depth / 2 + 0.012);
-        group.add(win);
+        this.addBox(
+          group, xx, yy + 0.95, depth / 2 + 0.1,
+          1.9, 0.08, 0.12,
+          this.basic(0xff55d9)
+        );
       }
     }
 
+    // CYAN ROOF TRIM
     this.addNeon(
-      group,
-      0,
-      height - 0.25,
-      depth / 2 + 0.04,
-      width * 0.82,
-      0.18,
-      0.12,
-      0x43eaff
+      group, 0, height + 0.12, 0,
+      width + 0.6, 0.22, depth + 0.6,
+      0x35eaff
+    );
+
+    // PINK SIDE ACCENTS
+    for (const side of [-1, 1]) {
+      this.addNeon(
+        group,
+        side * (width / 2 + 0.08),
+        height / 2,
+        0,
+        0.16,
+        height,
+        0.18,
+        0xff48d5
+      );
+    }
+
+    // ROOFTOP DETAILS
+    this.addBox(
+      group, 0, height + 0.8, 0,
+      width * 0.45, 1.2, depth * 0.35,
+      darkMat
+    );
+
+    this.addNeon(
+      group, 0, height + 1.45, 0,
+      width * 0.48, 0.12, 0.12,
+      0xffa23d
     );
 
     group.position.set(x, 0, z);
 
-group.userData = {
-  width,
-  height,
-  depth,
-  solid: true
-};
+    group.userData = {
+      width,
+      height,
+      depth,
+      solid: true
+    };
 
     this.scene.add(group);
     this.buildings.push(group);
@@ -300,411 +294,688 @@ group.userData = {
     return group;
   }
 
-  
-
-createEnterableBuilding(name, x, z, color, accent, type) {
-  const THREE = this.THREE;
-  const group = new THREE.Group();
-const w = 22;
-const h = 8;
-const d = 18;
-const t = 0.45;
-const upperY = 4;
-
-  const wall = this.mat(color);
-  const floorMat = this.mat(0x55516d);
-  const upperMat = this.mat(0x686477);
-  const coverMat = this.mat(0x77716b);
-
-  // GROUND FLOOR
-  this.addBox(
-    group, 0, -0.12, 0,
-    w, 0.24, d, floorMat
-  );
-
-  // OUTER WALLS
-  this.addBox(
-    group, 0, h / 2, -d / 2,
-    w, h, t, wall
-  );
-
-  this.addBox(
-    group, -w / 2, h / 2, 0,
-    t, h, d, wall
-  );
-
-  this.addBox(
-    group, w / 2, h / 2, 0,
-    t, h, d, wall
-  );
-// LARGE INDUSTRIAL LOADING ENTRANCE
-this.addBox(
-  group, -7.5, h / 2, d / 2,
-  7, h, t, wall
-);
-
-this.addBox(
-  group, 7.5, h / 2, d / 2,
-  7, h, t, wall
-);
-
-this.addBox(
-  group, 0, h - 0.35, d / 2,
-  8, 0.7, t, wall
-);
-
-  // SECOND FLOOR - LEFT PLATFORM
-  this.addBox(
-    group, -4.25, upperY, 0,
-    5.5, 0.25, 11,
-    upperMat
-  );
-
-  // SECOND FLOOR - RIGHT PLATFORM
-  this.addBox(
-    group, 4.25, upperY, 0,
-    5.5, 0.25, 11,
-    upperMat
-  );
-
-  // SECOND FLOOR - REAR LANDING
-  this.addBox(
-    group, 0, upperY, -4.85,
-    3, 0.25, 1.8,
-    upperMat
-  );
-
-  // WALKABLE RAMP
-  const rampLength = 8.6;
-  const rampRise = 4;
-  const rampAngle = Math.atan2(
-    rampRise,
-    rampLength
-  );
-
-  const ramp = this.addBox(
-    group,
-    0,
-    upperY / 2,
-    0.5,
-    2.8,
-    0.3,
-    rampLength,
-    this.mat(0x8b8175)
-  );
-
-  ramp.rotation.x = rampAngle;
-
-  // RAMP SIDE RAILS
-  for (const side of [-1, 1]) {
-    const rail = this.addBox(
-      group,
-      side * 1.45,
-      upperY / 2 + 0.45,
-      0.5,
-      0.15,
-      0.9,
-      rampLength,
-      wall
-    );
-
-    rail.rotation.x = rampAngle;
-  }
-
-  // UPPER FLOOR COVER
-  this.addBox(
-    group, -4.5, upperY + 0.8, 0.5,
-    1.5, 1.6, 1.5, coverMat
-  );
-
-  this.addBox(
-    group, 4.5, upperY + 0.8, 0.5,
-    1.5, 1.6, 1.5, coverMat
-  );
-
-  // GROUND FLOOR COVER
-  this.addBox(
-    group, -4.5, 0.7, -3.5,
-    1.5, 1.4, 1.5, coverMat
-  );
-
-  this.addBox(
-    group, 4.5, 0.7, -3.5,
-    1.5, 1.4, 1.5, coverMat
-  );
-
-  // ROOF
-  this.addBox(
-    group, 0, h + 0.12, 0,
-    w + 0.5, 0.25, d + 0.5,
-    this.basic(accent)
-  );
-    // INDUSTRIAL STEEL SUPPORT BEAMS
-  const steelMat = this.mat(0x303b43);
-
-  for (const sx of [-1, 1]) {
-    for (const sz of [-1, 1]) {
-      this.addBox(
-        group,
-        sx * (w / 2 - 0.4),
-        h / 2,
-        sz * (d / 2 - 0.4),
-        0.55,
-        h,
-        0.55,
-        steelMat
-      );
-    }
-  }
-
-  // BUILDING SIGN
-  this.addBox(
-    group, 0, 5.9, d / 2 + 0.28,
-    7.2, 0.9, 0.18,
-    this.basic(accent)
-  );
-
-  // SECOND FLOOR COLLISION / HEIGHT ZONES
-  this.floorZones.push(
-    {
-      minX: x - 6.9,
-      maxX: x - 1.5,
-      minZ: z - 5.5,
-      maxZ: z + 5.5,
-      height: upperY
-    },
-    {
-      minX: x + 1.5,
-      maxX: x + 6.9,
-      minZ: z - 5.5,
-      maxZ: z + 5.5,
-      height: upperY
-    },
-    {
-      minX: x - 1.5,
-      maxX: x + 1.5,
-      minZ: z - 5.8,
-      maxZ: z - 3.8,
-      height: upperY
-    },
-    {
-      type: "ramp",
-      minX: x - 1.5,
-      maxX: x + 1.5,
-      minZ: z - 3.8,
-      maxZ: z + 4.8,
-      startZ: z + 4.8,
-      endZ: z - 3.8,
-      startHeight: 0,
-      endHeight: upperY
-    }
-  );
-
-  // LIGHT
-  const light = new THREE.PointLight(
-    accent,
-    1.15,
-    19
-  );
-
-  light.position.set(0, 4.2, 0);
-  group.add(light);
-
-  // POSITION BUILDING
-  group.position.set(x, 0, z);
-
-  // INVISIBLE WALL COLLIDERS
-  const addWallCollider = (
-    localX,
-    localZ,
-    width,
-    depth
-  ) => {
-    this.buildings.push({
-      position: {
-        x: x + localX,
-        z: z + localZ
-      },
-      userData: {
-        width,
-        depth,
-        solid: true
-      },
-      visible: true
-    });
-  };
-
-  addWallCollider(0, -d / 2, w, t);
-  addWallCollider(-w / 2, 0, t, d);
-  addWallCollider(w / 2, 0, t, d);
-  addWallCollider(-4.5, d / 2, 5, t);
-  addWallCollider(4.5, d / 2, 5, t);
-
-  group.userData = {
-    name,
-    enterable: true,
-    width: w,
-    height: h,
-    depth: d,
-    doorWidth: 4,
-
-    entrance: {
-      x: 0,
-      z: d / 2,
-      width: 4
-    },
-
-    bounds: {
-      minX: -w / 2,
-      maxX: w / 2,
-      minZ: -d / 2,
-      maxZ: d / 2
-    },
-
-    worldX: x,
-    worldZ: z,
-    occupied: false
-  };
-
-  this.scene.add(group);
-  this.buildings.push(group);
-  this.landmarks.push({
-    name,
-    x,
-    z,
-    group
-  });
-
-  return group;
-}
-  
-
-  createLamp(x, z, color) {
+  createEnterableBuilding(name, x, z, color, accent, type) {
     const THREE = this.THREE;
     const group = new THREE.Group();
 
+    const w = 24;
+    const h = 9;
+    const d = 20;
+    const t = 0.5;
+    const upperY = 4.5;
+
+    const wall = this.mat(color);
+    const floorMat = this.mat(0x424a78);
+    const upperMat = this.mat(0x59618e);
+    const darkMat = this.mat(0x252b50);
+
+    // GROUND FLOOR
     this.addBox(
-      group, 0, 2.6, 0,
-      0.18, 5.2, 0.18,
-      this.mat(0x45456c)
+      group, 0, -0.12, 0,
+      w, 0.24, d, floorMat
     );
 
+    // REAR WALL
     this.addBox(
-      group, 0, 5.25, 0,
-      1.2, 0.18, 0.5,
-      this.mat(0x45456c)
+      group, 0, h / 2, -d / 2,
+      w, h, t, wall
     );
 
+    // SIDE WALLS
     this.addBox(
-      group, 0, 5.42, 0,
-      0.72, 0.18, 0.36,
-      this.basic(color)
-    );
-
-    group.position.set(x, 0, z);
-
-    const light = new THREE.PointLight(color, 1.0, 13);
-    light.position.set(0, 5.3, 0);
-    group.add(light);
-
-    this.scene.add(group);
-    this.lamps.push(group);
-  }
-
-  createTree(x, z) {
-    const group = new this.THREE.Group();
-
-    this.addBox(
-      group, 0, 1.1, 0,
-      0.65, 2.2, 0.65,
-      this.mat(0x80502f)
+      group, -w / 2, h / 2, 0,
+      t, h, d, wall
     );
 
     this.addBox(
-      group, 0, 3, 0,
-      2.8, 2, 2.8,
-      this.mat(0x37b96c)
+      group, w / 2, h / 2, 0,
+      t, h, d, wall
+    );
+
+    // FRONT WALL WITH LARGE OPEN ENTRANCE
+    this.addBox(
+      group, -8.5, h / 2, d / 2,
+      7, h, t, wall
     );
 
     this.addBox(
-      group, 0, 4.25, 0,
-      2, 1.2, 2,
-      this.mat(0x55df83)
+      group, 8.5, h / 2, d / 2,
+      7, h, t, wall
     );
 
-    group.position.set(x, 0, z);
-    this.scene.add(group);
-                }
-      
-  
-
-  createCity() {
-    const THREE = this.THREE;
-
-    this.pickups = [];
-    this.landmarks = [];
-    this.buildings = [];
-    this.obstacles = [];
-    this.lamps = [];
-    this.floorZones = [];
-
-    const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(100, 100),
-      this.mat(0x292b35)
+    this.addBox(
+      group, 0, h - 0.4, d / 2,
+      10, 0.8, t, wall
     );
-    ground.rotation.x = -Math.PI / 2;
-    this.scene.add(ground);
 
-    const road = new THREE.Mesh(
-      new THREE.PlaneGeometry(90, 12),
-      this.mat(0x171a24)
+    // SECOND FLOOR PLATFORMS
+    this.addBox(
+      group, -4.5, upperY, 0,
+      5, 0.3, 12, upperMat
     );
-    road.rotation.x = -Math.PI / 2;
-    road.position.set(0, 0.025, 14);
-    this.scene.add(road);
 
-    for (let x = -40; x <= 40; x += 10) {
+    this.addBox(
+      group, 4.5, upperY, 0,
+      5, 0.3, 12, upperMat
+    );
+
+    this.addBox(
+      group, 0, upperY, -8,
+      4, 0.3, 4, upperMat
+    );
+
+    // CENTRAL WALKWAY RAMP
+    const rampLength = 9;
+    const rampRise = upperY;
+
+    const ramp = this.addBox(
+      group, 0, upperY / 2, 0.5,
+      3, 0.3, rampLength,
+      this.mat(0x9b91ad)
+    );
+
+    ramp.rotation.x = Math.atan2(rampRise, rampLength);
+
+    // RAMP RAILINGS
+    for (const side of [-1, 1]) {
+      const rail = this.addBox(
+        group,
+        side * 1.65,
+        upperY / 2 + 0.45,
+        0.5,
+        0.15,
+        0.9,
+        rampLength,
+        darkMat
+      );
+
+      rail.rotation.x = Math.atan2(rampRise, rampLength);
+    }
+
+    // COLORFUL BUILDING TRIMS
+    this.addNeon(
+      group, 0, h - 0.2, d / 2 + 0.32,
+      10, 0.18, 0.15,
+      accent
+    );
+
+    this.addNeon(
+      group, 0, 1.1, d / 2 + 0.35,
+      9, 0.16, 0.16,
+      0xffb347
+    );
+
+    // ROOF
+    this.addBox(
+      group, 0, h + 0.15, 0,
+      w + 0.7, 0.3, d + 0.7,
+      darkMat
+    );
+
+    this.addNeon(
+      group, 0, h + 0.35, 0,
+      w + 0.9, 0.12, d + 0.9,
+      accent
+    );
+
+    // ROOFTOP CENTER STRUCTURE
+    this.addBox(
+      group, 0, h + 1.1, -2,
+      8, 1.6, 5,
+      wall
+    );
+
+    this.addNeon(
+      group, 0, h + 1.95, -2,
+      8.2, 0.12, 0.15,
+      0x44eaff
+    );
+
+    // INTERIOR COVER
+    for (const side of [-1, 1]) {
       this.addBox(
-        this.scene, x, 0.055, 14,
-        4, 0.025, 0.16,
-        this.basic(0xd5c878)
+        group, side * 4.5, 0.8, -4,
+        1.8, 1.6, 1.8,
+        darkMat
+      );
+
+      this.addBox(
+        group, side * 4.5, upperY + 0.8, 1,
+        1.8, 1.6, 1.8,
+        darkMat
       );
     }
 
-    this.createEnterableBuilding(
-      "ABANDONED WAREHOUSE",
-      -18, -8,
-      0x454b55, 0xff8b35, "mart"
+    // FLOOR HEIGHT ZONES
+    this.floorZones.push(
+      {
+        minX: x - 7,
+        maxX: x - 1.5,
+        minZ: z - 6,
+        maxZ: z + 6,
+        height: upperY
+      },
+      {
+        minX: x + 1.5,
+        maxX: x + 7,
+        minZ: z - 6,
+        maxZ: z + 6,
+        height: upperY
+      },
+      {
+        minX: x - 2,
+        maxX: x + 2,
+        minZ: z - 9,
+        maxZ: z - 6,
+        height: upperY
+      },
+      {
+        type: "ramp",
+        minX: x - 1.7,
+        maxX: x + 1.7,
+        minZ: z - 4,
+        maxZ: z + 5,
+        startZ: z + 5,
+        endZ: z - 4,
+        startHeight: 0,
+        endHeight: upperY
+      }
     );
 
-    this.createEnterableBuilding(
-      "MILITARY CONTROL BASE",
-      18, -8,
-      0x394b5b, 0x42dfff, "office"
-    );
+    // BUILDING LIGHT
+    const light = new THREE.PointLight(accent, 2, 32);
+    light.position.set(0, 5, 0);
+    group.add(light);
 
-    const arenaLight = new THREE.PointLight(
-      0x48cfff, 1.2, 65
-    );
-    arenaLight.position.set(0, 12, 12);
-    this.scene.add(arenaLight);
-  }
-    
-    
+    group.position.set(x, 0, z);
+
+    // WALL COLLIDERS
+    const addWallCollider = (localX, localZ, width, depth) => {
+      this.buildings.push({
+        position: {
+          x: x + localX,
+          z: z + localZ
+        },
+        userData: {
+          width,
+          depth,
+          solid: true
+        },
+        visible: true
+      });
+    };
+
+    addWallCollider(0, -d / 2, w, t);
+    addWallCollider(-w / 2, 0, t, d);
+    addWallCollider(w / 2, 0, t, d);
+    addWallCollider(-8.5, d / 2, 7, t);
+addWallCollider(8.5, d / 2, 7, t);
+
+    group.userData = {
+      name,
+      enterable: true,
+      width: w,
+      height: h,
+      depth: d,
+      doorWidth: 10,
+      entrance: {
+        x: 0,
+        z: d / 2,
+        width: 10
+      },
+      bounds: {
+        minX: -w / 2,
+        maxX: w / 2,
+        minZ: -d / 2,
+        maxZ: d / 2
+      },
+      worldX: x,
+      worldZ: z,
+      occupied: false
+    };
+
+    this.scene.add(group);
+    this.buildings.push(group);
+
+    this.landmarks.push({
+      name,
+      x,
+      z,
+      group
+    });
+
+    return group;
+      }
   
+  createArenaFloor() {
+    const THREE = this.THREE;
+
+    const groundMat = this.mat(0x343b70);
+    const laneMat = this.mat(0x252b58);
+
+    // LARGE ARENA GROUND
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(180, 180),
+      groundMat
+    );
+
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.08;
+    this.scene.add(ground);
+
+    // MAIN COMBAT LANES
+    for (const z of [-35, 0, 35]) {
+      this.addBox(
+        this.scene, 0, 0.015, z,
+        110, 0.08, 12,
+        laneMat
+      );
+
+      this.addNeon(
+        this.scene, 0, 0.08, z - 6,
+        110, 0.12, 0.22,
+        0x35eaff
+      );
+
+      this.addNeon(
+        this.scene, 0, 0.08, z + 6,
+        110, 0.12, 0.22,
+        0xff4bd8
+      );
+    }
+
+    // CENTRAL COMBAT PLATFORM
+    this.addBox(
+      this.scene, 0, 0.35, 8,
+      28, 0.7, 28,
+      this.mat(0x50578e)
+    );
+
+    this.addNeon(
+      this.scene, 0, 0.75, 8,
+      28.5, 0.16, 28.5,
+      0xffa13d
+    );
+
+    // CENTER PLATFORM DETAILS
+    this.addBox(
+      this.scene, 0, 1.05, 8,
+      10, 0.6, 10,
+      this.mat(0x343d78)
+    );
+
+    this.addNeon(
+      this.scene, 0, 1.38, 8,
+      10.3, 0.12, 10.3,
+      0x46f5ff
+    );
+
+    // SIDE WALKWAYS
+    for (const side of [-1, 1]) {
+      this.addBox(
+        this.scene, side * 30, 0.45, 0,
+        10, 0.9, 72,
+        this.mat(0x424c83)
+      );
+
+      this.addNeon(
+        this.scene, side * 30, 0.95, 0,
+        10.2, 0.12, 72.2,
+        side < 0 ? 0x40eaff : 0xff51d9
+      );
+    }
+
+    // OUTER ARENA BOUNDARIES
+    for (const x of [-75, 75]) {
+      this.addBox(
+        this.scene, x, 3, 0,
+        1.2, 6, 150,
+        this.mat(0x22284f)
+      );
+
+      this.addNeon(
+        this.scene, x, 6.1, 0,
+        1.5, 0.18, 150,
+        0x45eaff
+      );
+    }
+
+    for (const z of [-75, 75]) {
+      this.addBox(
+        this.scene, 0, 3, z,
+        150, 6, 1.2,
+        this.mat(0x22284f)
+      );
+
+      this.addNeon(
+        this.scene, 0, 6.1, z,
+        150, 0.18, 1.5,
+        0xff4bd8
+      );
+    }
+
+    // DECORATIVE FLOOR LIGHTS
+    for (const x of [-48, -24, 24, 48]) {
+      for (const z of [-48, 48]) {
+        this.addNeon(
+          this.scene, x, 0.08, z,
+          5, 0.12, 0.35,
+          0xffc14a
+        );
+      }
+    }
+  }
+
+  createArenaCover() {
+    const THREE = this.THREE;
+
+    const coverMat = this.mat(0x56628e);
+    const darkMat = this.mat(0x292f60);
+
+    // COLORFUL TACTICAL COVER
+    const positions = [
+      [-43, -25, 7, 2, 3],
+      [-25, -15, 5, 2, 5],
+      [25, -15, 5, 2, 5],
+      [43, -25, 7, 2, 3],
+      [-43, 25, 7, 2, 3],
+      [-25, 15, 5, 2, 5],
+      [25, 15, 5, 2, 5],
+      [43, 25, 7, 2, 3],
+      [-12, -42, 6, 2, 3],
+      [12, -42, 6, 2, 3],
+      [-12, 42, 6, 2, 3],
+      [12, 42, 6, 2, 3]
+    ];
+
+    for (const [x, z, w, h, d] of positions) {
+      const box = new THREE.Mesh(
+        new THREE.BoxGeometry(w, h, d),
+        coverMat
+      );
+
+      box.position.set(x, h / 2, z);
+      this.scene.add(box);
+      this.obstacles.push(box);
+
+      this.addNeon(
+        this.scene, x, h + 0.08, z,
+        w + 0.1, 0.12, d + 0.1,
+        0x42eaff
+      );
+    }
+
+    // SMALL COLORFUL PILLARS
+    for (const x of [-55, -18, 18, 55]) {
+      for (const z of [-55, 55]) {
+        this.addBox(
+          this.scene, x, 2, z,
+          2, 4, 2,
+          darkMat
+        );
+
+        this.addNeon(
+          this.scene, x, 4.1, z,
+          2.2, 0.18, 2.2,
+          0xff51d9
+        );
+      }
+    }
+  }
+  
+  createAnimeDecorations() {
+    const THREE = this.THREE;
+
+    const colors = [
+      0x36eaff,
+      0xff4fd8,
+      0xffb13b,
+      0x8d68ff,
+      0x70ffad
+    ];
+
+    // FUTURISTIC ENERGY TOWERS
+    const towerPositions = [
+      [-58, -35],
+      [58, -35],
+      [-58, 35],
+      [58, 35]
+    ];
+
+    towerPositions.forEach(([x, z], i) => {
+      const color = colors[i % colors.length];
+      const tower = new THREE.Group();
+
+      this.addBox(
+        tower, 0, 5, 0,
+        4, 10, 4,
+        this.mat(0x29345f)
+      );
+
+      this.addNeon(
+        tower, 0, 10.1, 0,
+        4.5, 0.35, 4.5,
+        color
+      );
+
+      this.addNeon(
+        tower, 0, 5, 2.08,
+        3.5, 0.3, 0.12,
+        color
+      );
+
+      this.addNeon(
+        tower, 0, 5, -2.08,
+        3.5, 0.3, 0.12,
+        color
+      );
+
+      const light = new THREE.PointLight(color, 2.5, 28);
+      light.position.set(0, 7, 0);
+      tower.add(light);
+
+      tower.position.set(x, 0, z);
+      this.scene.add(tower);
+    });
+
+    // HOLOGRAM ARCHES
+    for (const z of [-24, 24]) {
+      this.addBox(
+        this.scene, -32, 6, z,
+        0.35, 12, 0.35,
+        this.basic(0x3beaff)
+      );
+
+      this.addBox(
+        this.scene, 32, 6, z,
+        0.35, 12, 0.35,
+        this.basic(0xff4fd8)
+      );
+
+      this.addBox(
+        this.scene, 0, 12, z,
+        64, 0.35, 0.35,
+        this.basic(0x8d68ff)
+      );
+    }
+
+    // FLOATING DECORATIVE PLATFORMS
+    const platforms = [
+      [-43, -8, 8],
+      [43, -8, 8],
+      [-43, 8, 8],
+      [43, 8, 8]
+    ];
+
+    for (const [x, z, size] of platforms) {
+      this.addBox(
+        this.scene, x, 3, z,
+        size, 0.6, size,
+        this.mat(0x424d83)
+      );
+
+      this.addNeon(
+        this.scene, x, 3.35, z,
+        size + 0.2, 0.12, size + 0.2,
+        0x48eaff
+      );
+    }
+
+    // COLORFUL ENERGY PILLARS
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const x = Math.cos(angle) * 65;
+      const z = Math.sin(angle) * 65;
+
+      this.addNeon(
+        this.scene, x, 4, z,
+        0.5, 8, 0.5,
+        colors[i % colors.length]
+      );
+    }
+
+    // CENTRAL HOLOGRAM MARKER
+    const holo = new THREE.Group();
+
+    this.addNeon(
+      holo, 0, 0, 0,
+      7, 0.12, 7,
+      0x40efff
+    );
+
+    this.addNeon(
+      holo, 0, 2.5, 0,
+      0.2, 5, 0.2,
+      0xff50da
+    );
+
+    const holoLight = new THREE.PointLight(
+      0x42eaff,
+      3,
+      30
+    );
+
+    holoLight.position.set(0, 3, 0);
+    holo.add(holoLight);
+
+    holo.position.set(0, 1.8, 8);
+    this.scene.add(holo);
+
+    // DECORATIVE BRIDGE LIGHTS
+    for (const side of [-1, 1]) {
+      for (let z = -25; z <= 25; z += 10) {
+        this.addNeon(
+          this.scene,
+          side * 30,
+          1.1,
+          z,
+          0.25,
+          1.5,
+          2,
+          side < 0 ? 0x38eaff : 0xff4fd8
+        );
+      }
+    }
+  }
+
+  createArenaLights() {
+    const THREE = this.THREE;
+
+    const lights = [
+      [-35, 12, -35, 0x35eaff],
+      [35, 12, -35, 0xff4fd8],
+      [-35, 12, 35, 0xffb13b],
+      [35, 12, 35, 0x8d68ff],
+      [0, 16, 8, 0x4affed]
+    ];
+
+    for (const [x, y, z, color] of lights) {
+      const light = new THREE.PointLight(
+        color,
+        2.2,
+        48
+      );
+
+      light.position.set(x, y, z);
+      this.scene.add(light);
+    }
+  }
+  
+  
+  createCity() {
+    // Reset map collections before building the world
+    this.obstacles = [];
+    this.buildings = [];
+    this.lamps = [];
+    this.pickups = [];
+    this.landmarks = [];
+    this.floorZones = [];
+
+    // Main arena floor and combat lanes
+    this.createArenaFloor();
+
+    // TWO SIDE-BY-SIDE ENTERABLE BUILDINGS
+    this.createEnterableBuilding(
+      "NEON RESIDENCE",
+      -13,
+      -28,
+      0x35477f,
+      0x35eaff,
+      "cyan"
+    );
+
+    this.createEnterableBuilding(
+      "VIOLET COMPLEX",
+      13,
+      -28,
+      0x49356f,
+      0xff4bd8,
+      "pink"
+    );
+
+    // Arena structures and visual effects
+    this.createArenaCover();
+    this.createAnimeDecorations();
+    this.createArenaLights();
+
+    // Spawn landmarks for map reference
+    this.landmarks.push({
+      name: "CENTRAL ARENA",
+      x: 0,
+      z: 8,
+      group: null
+    });
+  }
+
   createObstacles() {
-  this.obstacles = [];
+    // Keep this method for GameController compatibility.
+    // Tactical cover is created and registered in createArenaCover().
+    if (!this.obstacles) {
+      this.obstacles = [];
+    }
   }
 
-  
   resetWorld() {
-  this.enemies.forEach((enemy, index) => {
-    enemy.reset(index);
-  });
+    // Reset enemies
+    for (const enemy of this.enemies) {
+      if (enemy && typeof enemy.reset === "function") {
+        enemy.reset();
+      }
+    }
 
-  this.obstacles = [];
+    // Reset player-related world objects
+    for (const pickup of this.pickups) {
+      if (pickup && pickup.parent) {
+        pickup.parent.remove(pickup);
+      }
+    }
+
+    this.pickups = [];
   }
+  
   setCamera(player, bob = 0) {
+    if (!this.camera || !player) return;
+
     this.camera.position.set(
       player.x,
       player.y + bob,
@@ -717,10 +988,19 @@ this.addBox(
   }
 
   render() {
-    if (!this.renderer || !this.scene || !this.camera) return;
+    if (
+      !this.renderer ||
+      !this.scene ||
+      !this.camera
+    ) {
+      return;
+    }
 
-    this.renderer.render(this.scene, this.camera);
+    this.renderer.render(
+      this.scene,
+      this.camera
+    );
   }
-}      
+}
 
-        
+  
