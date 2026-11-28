@@ -618,6 +618,6 @@ group.userData = {
 
     this.renderer.render(this.scene, this.camera);
   }
-      }
+      
 
         
