@@ -7,7 +7,7 @@ Run through a dark, foggy city at night — and don't let them catch you.
 
 **Play it live here:** https://russellpakingan-debug.github.io/night-run/
 
-![Night Run Gameplay](https://via.placeholder.com/800x400?text=NIGHT+RUN)
+![Night Run Gameplay](https://princecristopherrafon-star.github.io/night-run-city-four/)
 
 ## 🎮 How To Play
 
