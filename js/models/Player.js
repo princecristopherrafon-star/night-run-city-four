@@ -157,9 +157,10 @@ export default class Player {
 
     if (typeof getGroundHeight === "function") {
       const detectedHeight = getGroundHeight(
-        this.x,
-        this.z
-      );
+  this.x,
+  this.z,
+  this.groundY
+);
 
       if (Number.isFinite(detectedHeight)) {
         targetGroundY = detectedHeight;
