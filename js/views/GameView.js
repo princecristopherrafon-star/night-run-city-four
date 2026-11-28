@@ -381,62 +381,267 @@ group.userData = {
         2.1, 0.35, 0.12, 0xff334f
       );
 
-      this.addNeon(
-        group, 0, 3.4, -d / 2 - 0.32,
-        0.35, 2.1, 0.12, 0xff334f
-      );
+createEnterableBuilding(name, x, z, color, accent, type) {
+  const THREE = this.THREE;
+  const group = new THREE.Group();
 
-    } else if (type === "arcade") {
-      for (let i = -1; i <= 1; i++) {
-        this.addBox(
-          group, i * 3.5, 1.25, -3,
-          1.7, 2.5, 1.1, furniture
-        );
+  const w = 14;
+  const h = 7;
+  const d = 12;
+  const t = 0.45;
+  const upperY = 3.5;
 
-        this.addNeon(
-          group, i * 3.5, 1.7, -2.38,
-          1.25, 0.8, 0.08,
-          [0xff4fd8, 0x42eaff, 0xffd84a][i + 1]
-        );
-      }
+  const wall = this.mat(color);
+  const floorMat = this.mat(0x55516d);
+  const upperMat = this.mat(0x686477);
+  const coverMat = this.mat(0x77716b);
 
-      this.addBox(group, 0, 0.65, 3.4, 5, 1.2, 1.1, furniture);
+  // GROUND FLOOR
+  this.addBox(
+    group, 0, -0.12, 0,
+    w, 0.24, d, floorMat
+  );
 
-    } else {
-      for (const xx of [-3, 0, 3]) {
-        this.addBox(
-          group, xx, 0.55, -1,
-          1.2, 0.15, 1.2, furniture
-        );
+  // OUTER WALLS
+  this.addBox(
+    group, 0, h / 2, -d / 2,
+    w, h, t, wall
+  );
 
-        this.addBox(
-          group, xx, 1, -1,
-          0.12, 0.9, 0.12, furniture
-        );
-      }
+  this.addBox(
+    group, -w / 2, h / 2, 0,
+    t, h, d, wall
+  );
+
+  this.addBox(
+    group, w / 2, h / 2, 0,
+    t, h, d, wall
+  );
+
+  // FRONT WALL - OPEN ENTRANCE
+  this.addBox(
+    group, -4.5, h / 2, d / 2,
+    5, h, t, wall
+  );
+
+  this.addBox(
+    group, 4.5, h / 2, d / 2,
+    5, h, t, wall
+  );
+
+  this.addBox(
+    group, 0, h - 0.35, d / 2,
+    4, 0.7, t, wall
+  );
+
+  // SECOND FLOOR - LEFT PLATFORM
+  this.addBox(
+    group, -4.25, upperY, 0,
+    5.5, 0.25, 11,
+    upperMat
+  );
+
+  // SECOND FLOOR - RIGHT PLATFORM
+  this.addBox(
+    group, 4.25, upperY, 0,
+    5.5, 0.25, 11,
+    upperMat
+  );
+
+  // SECOND FLOOR - REAR LANDING
+  this.addBox(
+    group, 0, upperY, -4.85,
+    3, 0.25, 1.8,
+    upperMat
+  );
+
+  // WALKABLE RAMP
+  const rampLength = 8.6;
+  const rampRise = 3.5;
+  const rampAngle = Math.atan2(
+    rampRise,
+    rampLength
+  );
+
+  const ramp = this.addBox(
+    group,
+    0,
+    upperY / 2,
+    0.5,
+    2.8,
+    0.3,
+    rampLength,
+    this.mat(0x8b8175)
+  );
+
+  ramp.rotation.x = rampAngle;
+
+  // RAMP SIDE RAILS
+  for (const side of [-1, 1]) {
+    const rail = this.addBox(
+      group,
+      side * 1.45,
+      upperY / 2 + 0.45,
+      0.5,
+      0.15,
+      0.9,
+      rampLength,
+      wall
+    );
+
+    rail.rotation.x = rampAngle;
+  }
+
+  // UPPER FLOOR COVER
+  this.addBox(
+    group, -4.5, upperY + 0.8, 0.5,
+    1.5, 1.6, 1.5, coverMat
+  );
+
+  this.addBox(
+    group, 4.5, upperY + 0.8, 0.5,
+    1.5, 1.6, 1.5, coverMat
+  );
+
+  // GROUND FLOOR COVER
+  this.addBox(
+    group, -4.5, 0.7, -3.5,
+    1.5, 1.4, 1.5, coverMat
+  );
+
+  this.addBox(
+    group, 4.5, 0.7, -3.5,
+    1.5, 1.4, 1.5, coverMat
+  );
+
+  // ROOF
+  this.addBox(
+    group, 0, h + 0.12, 0,
+    w + 0.5, 0.25, d + 0.5,
+    this.basic(accent)
+  );
+
+  // BUILDING SIGN
+  this.addBox(
+    group, 0, 5.9, d / 2 + 0.28,
+    7.2, 0.9, 0.18,
+    this.basic(accent)
+  );
+
+  // SECOND FLOOR COLLISION / HEIGHT ZONES
+  this.floorZones.push(
+    {
+      minX: x - 6.9,
+      maxX: x - 1.5,
+      minZ: z - 5.5,
+      maxZ: z + 5.5,
+      height: upperY
+    },
+    {
+      minX: x + 1.5,
+      maxX: x + 6.9,
+      minZ: z - 5.5,
+      maxZ: z + 5.5,
+      height: upperY
+    },
+    {
+      minX: x - 1.5,
+      maxX: x + 1.5,
+      minZ: z - 5.8,
+      maxZ: z - 3.8,
+      height: upperY
+    },
+    {
+      type: "ramp",
+      minX: x - 1.5,
+      maxX: x + 1.5,
+      minZ: z - 3.8,
+      maxZ: z + 4.8,
+      startZ: z + 4.8,
+      endZ: z - 3.8,
+      startHeight: 0,
+      endHeight: upperY
     }
+  );
 
-    const light = new THREE.PointLight(accent, 1.15, 19);
-    light.position.set(0, 4.2, 0);
-    group.add(light);
+  // LIGHT
+  const light = new THREE.PointLight(
+    accent,
+    1.15,
+    19
+  );
 
-    group.position.set(x, 0, z);
-    // INVISIBLE WALL COLLIDERS
-const addWallCollider = (localX, localZ, width, depth) => {
-  this.buildings.push({
-    position: {
-      x: x + localX,
-      z: z + localZ
+  light.position.set(0, 4.2, 0);
+  group.add(light);
+
+  // POSITION BUILDING
+  group.position.set(x, 0, z);
+
+  // INVISIBLE WALL COLLIDERS
+  const addWallCollider = (
+    localX,
+    localZ,
+    width,
+    depth
+  ) => {
+    this.buildings.push({
+      position: {
+        x: x + localX,
+        z: z + localZ
+      },
+      userData: {
+        width,
+        depth,
+        solid: true
+      },
+      visible: true
+    });
+  };
+
+  addWallCollider(0, -d / 2, w, t);
+  addWallCollider(-w / 2, 0, t, d);
+  addWallCollider(w / 2, 0, t, d);
+  addWallCollider(-4.5, d / 2, 5, t);
+  addWallCollider(4.5, d / 2, 5, t);
+
+  group.userData = {
+    name,
+    enterable: true,
+    width: w,
+    height: h,
+    depth: d,
+    doorWidth: 4,
+
+    entrance: {
+      x: 0,
+      z: d / 2,
+      width: 4
     },
-    userData: {
-      width,
-      depth,
-      solid: true
+
+    bounds: {
+      minX: -w / 2,
+      maxX: w / 2,
+      minZ: -d / 2,
+      maxZ: d / 2
     },
-    visible: true
+
+    worldX: x,
+    worldZ: z,
+    occupied: false
+  };
+
+  this.scene.add(group);
+  this.buildings.push(group);
+  this.landmarks.push({
+    name,
+    x,
+    z,
+    group
   });
-};
 
+  return group;
+}
+  
 // Back wall
 addWallCollider(0, -d / 2, w, t);
 
