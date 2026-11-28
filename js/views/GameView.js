@@ -376,7 +376,7 @@ this.addBox(
 
   // WALKABLE RAMP
   const rampLength = 8.6;
-  const rampRise = 3.5;
+  const rampRise = 4;
   const rampAngle = Math.atan2(
     rampRise,
     rampLength
