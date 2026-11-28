@@ -31,7 +31,7 @@ export default class GameView {
 
     
 this.config = {
-  height: 480,
+  height: 900,
 
   walkSpeed: 10,
   sprintSpeed: 19,
@@ -64,15 +64,18 @@ this.config = {
     this.camera.rotation.order = "YXZ";
 
     this.renderer = new THREE.WebGLRenderer({
-      antialias: false,
-      powerPreference: "high-performance",
-      alpha: false
-    });
+  antialias: true,
+  powerPreference: "high-performance",
+  alpha: false
+});
 
-    this.renderer.setPixelRatio(1);
-    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.15;
+this.renderer.setPixelRatio(
+  Math.min(window.devicePixelRatio || 1, 1.5)
+);
+
+this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+this.renderer.toneMappingExposure = 1.0;
 
     document.getElementById("game").appendChild(
       this.renderer.domElement
@@ -99,21 +102,20 @@ this.config = {
     addEventListener("resize", () => this.resizeRenderer());
   }
 
-  resizeRenderer() {
-    if (!this.renderer || !this.camera) return;
+resizeRenderer() {
+  if (!this.renderer || !this.camera) return;
 
-    const width = innerWidth;
-    const height = innerHeight;
-    const scale = this.config.height / height;
+  const width = window.innerWidth;
+  const height = window.innerHeight;
 
-    this.renderer.setSize(
-      Math.max(320, Math.round(width * scale)),
-      this.config.height,
-      false
-    );
+  this.renderer.setSize(width, height, false);
 
-    this.renderer.domElement.style.width = "100%";
-    this.renderer.domElement.style.height = "100%";
+  this.renderer.domElement.style.width = "100%";
+  this.renderer.domElement.style.height = "100%";
+
+  this.camera.aspect = width / height;
+  this.camera.updateProjectionMatrix();
+}
 
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
