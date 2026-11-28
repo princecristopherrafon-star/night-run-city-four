@@ -1207,18 +1207,30 @@ export default class GameController {
     }
   }
 
+  
   updateMovement(dt) {
+    const getGroundHeight = (x, z) => {
+      if (
+        typeof this.view.getGroundHeight === "function"
+      ) {
+        return this.view.getGroundHeight(x, z);
+      }
+
+      return 0;
+    };
+
     const bob = this.player.update(
       this.THREE,
       dt,
       this.joystick,
       this.sprintHeld,
-      this.view.config
+      this.view.config,
+      getGroundHeight
     );
 
     this.view.setCamera(this.player, bob);
   }
-
+  
   updateEnemies(dt, time) {
     let closest = 999;
 
