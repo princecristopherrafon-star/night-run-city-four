@@ -1209,15 +1209,19 @@ export default class GameController {
 
   
   updateMovement(dt) {
-    const getGroundHeight = (x, z) => {
-      if (
-        typeof this.view.getGroundHeight === "function"
-      ) {
-        return this.view.getGroundHeight(x, z);
-      }
+    const getGroundHeight = (x, z, currentHeight = 0) => {
+  if (
+    typeof this.view.getGroundHeight === "function"
+  ) {
+    return this.view.getGroundHeight(
+      x,
+      z,
+      currentHeight
+    );
+  }
 
-      return 0;
-    };
+  return 0;
+};
 
     const bob = this.player.update(
       this.THREE,
