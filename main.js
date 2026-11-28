@@ -41,6 +41,10 @@ function animate() {
 
 try {
   view.init();
+  if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./sw.js")
+    .catch(error => console.warn("SW error:", error));
+  }
 
   controller.setReady(true);
   controller.bind();
