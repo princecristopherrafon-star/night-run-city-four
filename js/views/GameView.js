@@ -305,12 +305,11 @@ group.userData = {
 createEnterableBuilding(name, x, z, color, accent, type) {
   const THREE = this.THREE;
   const group = new THREE.Group();
-
-  const w = 14;
-  const h = 7;
-  const d = 12;
-  const t = 0.45;
-  const upperY = 3.5;
+const w = 22;
+const h = 8;
+const d = 18;
+const t = 0.45;
+const upperY = 4;
 
   const wall = this.mat(color);
   const floorMat = this.mat(0x55516d);
