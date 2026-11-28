@@ -10,6 +10,9 @@ export default class Enemy {
     this.scene = scene;
 
     this.group = this.createFrame(textureLoader, portraitPaths);
+    this.health = 100;
+    this.active = true;
+    this.deadUntil = 0;
     this.reset(seed);
 
     scene.add(this.group);
@@ -125,6 +128,11 @@ export default class Enemy {
   }
 
   reset(index) {
+    this.health = 100;
+    this.active = true;
+    this.deadUntil = 0;
+    this.group.visible = true;
+
     this.group.position.set(
       (index % 2 === 0 ? -1 : 1) * rand(3, 8),
       1.55,
@@ -171,3 +179,4 @@ export default class Enemy {
     return distance;
   }
       }
+    
