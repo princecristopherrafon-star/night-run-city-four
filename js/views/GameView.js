@@ -630,32 +630,6 @@ group.userData = {
     for (const x of verticalRoads) {
       for (const z of horizontalRoads) {
         for (let stripe = -3; stripe <= 3; stripe++) {
-          this.addBox(
-            this.scene,
-            x + stripe * 1.7,
-            0.055,
-            z - 5.2,
-            0.9,
-            0.025,
-            2.2,
-            this.basic(0xd8eaff)
-          );
-
-          this.addBox(
-            this.scene,
-            x + stripe * 1.7,
-            0.055,
-            z + 5.2,
-            0.9,
-            0.025,
-            2.2,
-            this.basic(0xd8eaff)
-          );
-        }
-      }
-          }
-    
-
 
   createCity() {
     const THREE = this.THREE;
