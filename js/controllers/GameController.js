@@ -928,18 +928,107 @@ export default class GameController {
     }
   }
 
-  updateMovement(dt) {
-    const bob = this.player.update(
-      this.THREE,
-      dt,
-      this.joystick,
-      this.sprintHeld,
-      this.view.config
-    );
+  
+updateMovement(dt) {
+  const previousX = this.player.x;
+  const previousZ = this.player.z;
 
-    this.view.setCamera(this.player, bob);
+  const bob = this.player.update(
+    this.THREE,
+    dt,
+    this.joystick,
+    this.sprintHeld,
+    this.view.config
+  );
+
+  this.resolveBuildingCollisions(previousX, previousZ);
+
+  this.view.setCamera(this.player, bob);
+}
+  
+resolveBuildingCollisions(previousX, previousZ) {
+  const radius = 0.55;
+
+  const currentX = this.player.x;
+  const currentZ = this.player.z;
+
+  const buildings = this.view.buildings || [];
+
+  for (const building of buildings) {
+    const data = building.userData;
+
+    if (!data || !data.enterable) continue;
+
+    const centerX = building.position.x;
+    const centerZ = building.position.z;
+
+    const minX = centerX - data.width / 2 + radius;
+    const maxX = centerX + data.width / 2 - radius;
+    const minZ = centerZ - data.depth / 2 + radius;
+    const maxZ = centerZ + data.depth / 2 - radius;
+
+    const wasInside =
+      previousX > minX &&
+      previousX < maxX &&
+      previousZ > minZ &&
+      previousZ < maxZ;
+
+    const isInside =
+      currentX > minX &&
+      currentX < maxX &&
+      currentZ > minZ &&
+      currentZ < maxZ;
+
+    const doorHalf =
+      (data.doorWidth || 4) / 2 - radius;
+
+    const crossingX = (previousX + currentX) / 2;
+
+    const nearDoor =
+      Math.abs(crossingX - centerX) < doorHalf;
+
+    const frontZ = centerZ + data.depth / 2 - radius;
+
+    const entering =
+      !wasInside &&
+      isInside &&
+      previousZ >= frontZ &&
+      currentZ < frontZ &&
+      nearDoor;
+
+    const exiting =
+      wasInside &&
+      !isInside &&
+      previousZ < frontZ &&
+      currentZ >= frontZ &&
+      nearDoor;
+
+    if (entering || exiting) {
+      data.occupied = entering;
+      continue;
+    }
+
+    if (!wasInside && isInside) {
+      this.player.x = previousX;
+      this.player.z = previousZ;
+
+      this.player.velocity.x = 0;
+      this.player.velocity.z = 0;
+      break;
+    }
+
+    if (wasInside && !isInside) {
+      this.player.x = previousX;
+      this.player.z = previousZ;
+
+      this.player.velocity.x = 0;
+      this.player.velocity.z = 0;
+      break;
+    }
   }
-
+}
+  
+  
   updateEnemies(dt, time) {
     let closest = 999;
 
