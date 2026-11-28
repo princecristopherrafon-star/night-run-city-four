@@ -1,51 +1,18 @@
-const CACHE = "night-run-v7";
-const CORE = [
-  "./",
-  "./index.html",
-  "./manifest.webmanifest",
-  "./icon.svg",
-  "./css/style.css",
-  "./js/main.js",
-  "./js/models/Player.js",
-  "./js/models/Enemy.js",
-  "./js/models/Weapon.js",
-  "./js/models/Score.js",
-  "./js/dao/SaveDAO.js",
-  "./js/views/GameView.js",
-  "./js/controllers/GameController.js"
-];
+const CACHE = "night-run-v8";
 
 self.addEventListener("install", event => {
   self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE).then(cache => cache.addAll(CORE))
-  );
 });
 
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys => Promise.all(
-      keys.filter(key => key !== CACHE).map(key => caches.delete(key))
+      keys.map(key => caches.delete(key))
     )).then(() => self.clients.claim())
   );
 });
 
 self.addEventListener("fetch", event => {
-  const request = event.request;
-  if (request.method !== "GET") return;
-  const url = new URL(request.url);
-  if (url.origin !== self.location.origin) return;
-
-  // LAHAT NG FILES - NETWORK FIRST, para laging bago
-  event.respondWith(
-    fetch(request)
-      .then(response => {
-        if (response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE).then(cache => cache.put(request, copy));
-        }
-        return response;
-      })
-      .catch(() => caches.match(request).then(hit => hit || caches.match("./index.html")))
-  );
+  // WALANG CACHE MUNA - laging network para makapasok ka
+  return;
 });
