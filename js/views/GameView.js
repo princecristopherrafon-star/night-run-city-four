@@ -644,12 +644,7 @@ for (const x of [-75, 75]) {
 }
     
 
-      this.addNeon(
-        this.scene, x, 6.1, 0,
-        1.5, 0.18, 150,
-        0x45eaff
-      );
-    }
+      
 
     
 for (const z of [-75, 75]) {
@@ -668,13 +663,7 @@ for (const z of [-75, 75]) {
   );
 }
   
-      this.addNeon(
-        this.scene, 0, 6.1, z,
-        150, 0.18, 1.5,
-        0xff4bd8
-      );
-    }
-
+      
     // DECORATIVE FLOOR LIGHTS
     for (const x of [-48, -24, 24, 48]) {
       for (const z of [-48, 48]) {
