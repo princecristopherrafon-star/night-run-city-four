@@ -117,7 +117,11 @@ resizeRenderer() {
   this.camera.aspect = width / height;
   this.camera.updateProjectionMatrix();
 }
-getGroundHeight(x, z) {
+
+getGroundHeight(x, z, currentHeight = 0) {
+  let bestHeight = 0;
+  let bestDifference = Math.abs(currentHeight);
+
   for (const floor of this.floorZones) {
     if (
       x >= floor.minX &&
@@ -125,12 +129,20 @@ getGroundHeight(x, z) {
       z >= floor.minZ &&
       z <= floor.maxZ
     ) {
-      return floor.height;
+      const difference = Math.abs(
+        floor.height - currentHeight
+      );
+
+      if (difference < bestDifference) {
+        bestDifference = difference;
+        bestHeight = floor.height;
+      }
     }
   }
 
-  return 0;
+  return bestHeight;
 }
+  
   
   
 
@@ -143,10 +155,11 @@ getGroundHeight(x, z) {
   }
 
   addBox(parent, x, y, z, w, h, d, material) {
-    const mesh = new this.THREE.Mesh(
-      new this.THREE.BoxGeometry(w, h, d),
-      material
-    );
+    const detectedHeight = getGroundHeight(
+  this.x,
+  this.z,
+  this.groundY
+);
 
     mesh.position.set(x, y, z);
     parent.add(mesh);
