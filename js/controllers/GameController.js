@@ -1334,6 +1334,7 @@ export default class GameController {
       );
      }
   }
+}
 
   endGame() {
     if (this.gameOver) return;
