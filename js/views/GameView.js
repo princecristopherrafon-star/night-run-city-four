@@ -676,45 +676,19 @@ createEnterableBuilding(name, x, z, color, accent, type) {
   }
     
     
+  
   createObstacles() {
-    const THREE = this.THREE;
-    this.obstacles = [];
-
-    for (let i = 0; i < 14; i++) {
-      const obstacle = new THREE.Mesh(
-        new THREE.BoxGeometry(
-          rand(1.3, 2.5),
-          rand(0.8, 1.5),
-          1.2
-        ),
-        this.mat(0x283943)
-      );
-
-      obstacle.position.set(
-        rand(-6, 6),
-        0.6,
-        -20 - i * 13
-      );
-
-      this.scene.add(obstacle);
-      this.obstacles.push(obstacle);
-    }
+  this.obstacles = [];
   }
 
+  
   resetWorld() {
-    this.enemies.forEach((enemy, index) => {
-      enemy.reset(index);
-    });
+  this.enemies.forEach((enemy, index) => {
+    enemy.reset(index);
+  });
 
-    this.obstacles.forEach((obstacle, index) => {
-      obstacle.position.set(
-        rand(-6, 6),
-        0.6,
-        -20 - index * 13
-      );
-    });
+  this.obstacles = [];
   }
-
   setCamera(player, bob = 0) {
     this.camera.position.set(
       player.x,
