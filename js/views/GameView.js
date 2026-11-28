@@ -118,7 +118,7 @@ resizeRenderer() {
 }
 
   
-  }
+  
 
   mat(color) {
     return new this.THREE.MeshLambertMaterial({ color });
